@@ -482,15 +482,31 @@
         const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0 };
         pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; });
         const apSum = tot.g + tot.a;
-        document.getElementById('modal-player-name').innerText = name + " 통산 기록";
-        document.getElementById('modal-data').innerHTML = `<div class="modal-item">경기<br><b>${tot.m}</b></div><div class="modal-item">득점<br><b>${tot.g}</b></div><div class="modal-item">도움<br><b>${tot.a}</b></div><div class="modal-item">포인트<br><b>${apSum}</b></div><div class="modal-item-wide">PK: ${tot.pk} | 경고/퇴장: ${tot.yc}/${tot.rc}</div><div class="modal-item-wide">통산 실점: ${tot.con}실점 | CS: ${tot.cs}회</div>`;
-        document.getElementById('modal-overlay').style.display = 'flex';
+        
+        // [보정] 실점 기록(tot.con)이 0보다 큰 경우에만 골키퍼 지표를 출력합니다.
+        let gkStatsHtml = "";
+        if (tot.con > 0 || tot.cs > 0) {
+            gkStatsHtml = `<div class="modal-item">클린시트<br><b>${tot.cs}</b></div>
+                           <div class="modal-item-wide"> 실점<br><b>${tot.con}실점</b></div>`;
     }
+
+    document.getElementById('modal-player-name').innerText = name + " 부천 통산 기록";
+    document.getElementById('modal-data').innerHTML = `
+        <div class="modal-item">경기<br><b>${tot.m}</b></div>
+        <div class="modal-item">득점<br><b>${tot.g}</b></div>
+        <div class="modal-item">도움<br><b>${tot.a}</b></div>
+        <div class="modal-item">포인트<br><b>${apSum}</b></div>
+        <div class="modal-item-wide">PK 성공: ${tot.pk} | 경고/퇴장: ${tot.yc}/${tot.rc}</div>
+        ${gkStatsHtml}
+    `;
+    document.getElementById('modal-overlay').style.display = 'flex';
+}
 
     window.onload = loadData;
 </script>
 </body>
 </html>
+
 
 
 
