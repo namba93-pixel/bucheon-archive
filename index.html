@@ -13,7 +13,7 @@
         .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 20px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
         .stats-dashboard span { margin: 0 8px; font-weight: 600; }
         .mode-switch { display: flex; justify-content: center; gap: 10px; margin-top: -25px; position: relative; z-index: 100; }
-        .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid var(--bfc-red); }
         .mode-btn.active { background: var(--bfc-red); color: white; }
         .container { max-width: 1300px; margin: 30px auto 50px; padding: 0 15px; flex: 1; position: relative; z-index: 10; }
         .ranking-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px; }
@@ -201,6 +201,13 @@
         return n; 
     }
 
+    function getParticle(name) {
+        if(!name) return "";
+        const charCode = name.charCodeAt(name.length - 1);
+        const hasBatchim = (charCode - 0xAC00) % 28 > 0;
+        return hasBatchim ? "과의" : "와의";
+    }
+
     function fixAllTimeStats() {
         let w=0, d=0, l=0, gf=0, ga=0;
         rawData.forEach(m => {
@@ -220,6 +227,20 @@
     function switchMode(m) {
         currentMode = m; isTotalRankMode = false;
         currentFilter = { opponent: null, stadium: null };
+        
+        if(document.getElementById('search-opponent')) document.getElementById('search-opponent').value = "";
+        if(document.getElementById('search-opp-manager')) document.getElementById('search-opp-manager').value = "";
+        if(document.getElementById('search-referee')) document.getElementById('search-referee').value = "";
+        if(document.getElementById('p-search-name')) document.getElementById('p-search-name').value = "";
+        
+        const selects = ['select-year', 'select-location', 'select-manager', 'select-league', 'p-select-year'];
+        selects.forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+
+        if(document.getElementById('check-all')) {
+            document.getElementById('check-all').checked = true;
+            toggleAllLeagues(document.getElementById('check-all'));
+        }
+
         document.getElementById('dynamic-header').style.display = 'none';
         document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none';
         document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
@@ -244,11 +265,21 @@
         const sRef = (document.getElementById('search-referee')?.value || "").trim();
 
         const header = document.getElementById('dynamic-header');
+        const titleEl = document.getElementById('dynamic-title');
         const summary = document.getElementById('dynamic-summary');
 
         if (currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef) {
             header.style.display = "flex";
-            document.getElementById('dynamic-title').innerText = "🔍 경기 결과 조회";
+            let titleParts = [];
+            const targetOpp = sOpp || currentFilter.opponent;
+            if (currentFilter.stadium) titleParts.push(`${currentFilter.stadium}에서`);
+            if (targetOpp) titleParts.push(`${targetOpp}${getParticle(targetOpp)} 경기결과`);
+            else if (sOppMgr) titleParts.push(`${sOppMgr} 감독과의 경기결과`);
+            else if (sRef) titleParts.push(`${sRef} 주심이 진행한 경기결과`);
+            else if (mgr) titleParts.push(`${mgr} 감독의 경기결과`);
+            else titleParts.push("조회 결과");
+            if (year) titleParts.push(`(${year}시즌)`);
+            titleEl.innerText = `🔍 ${titleParts.join(" ")}`;
         } else { header.style.display = "none"; }
 
         let filtered = rawData.filter(m => {
