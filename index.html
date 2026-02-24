@@ -293,8 +293,20 @@
             t[d.name].pk += parseInt(d.pk)||0; t[d.name].cs += parseInt(d.cleansheet)||0;
             if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season);
         });
-        let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]);
-        document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td>${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td>${p.pk}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${p.seasons.sort().join(',')}</td></tr>`).join('');
+        let sortedData = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]);
+        document.getElementById('table-body').innerHTML = sortedData.map((p, i) => `
+            <tr>
+                <td>${i+1}</td>
+                <td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td>
+                <td class="${sortState.column === 'match' ? 'highlight-red' : ''}">${p.match}</td>
+                <td class="${sortState.column === 'goal' ? 'highlight-red' : ''}">${p.goal}</td>
+                <td class="${sortState.column === 'assist' ? 'highlight-red' : ''}">${p.assist}</td>
+                <td class="${sortState.column === 'ap' ? 'highlight-red' : ''}">${p.ap}</td>
+                <td class="${sortState.column === 'pk' ? 'highlight-red' : ''}">${p.pk}</td>
+                <td class="${sortState.column === 'yc' ? 'highlight-red' : ''}">${p.yc}</td>
+                <td class="${sortState.column === 'cs' ? 'highlight-red' : ''}">${(p.conceded > 0 || p.cs > 0) ? p.cs : '-'}</td>
+                <td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td>
+            </tr>`).join('');
     }
 
     function calculateTotalRankings() {
@@ -316,10 +328,17 @@
 
     function showPlayerTotal(name) {
         const pData = playerSeasonData.filter(p => p.name === name);
-        const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0 };
-        pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; });
-        document.getElementById('modal-player-name').innerText = name + " 통산 기록";
-        document.getElementById('modal-data').innerHTML = `<div class="modal-item">출전<br><b>${tot.m}</b></div><div class="modal-item">득점<br><b>${tot.g}</b></div><div class="modal-item">도움<br><b>${tot.a}</b></div><div class="modal-item">PK<br><b>${tot.pk}</b></div><div class="modal-item">경고/퇴장<br><b>${tot.yc}/${tot.rc}</b></div><div class="modal-item">클린시트<br><b>${tot.cs}</b></div><div class="modal-item-wide">실점<br><b>${tot.con}</b></div>`;
+        const total = { match:0, goal:0, assist:0, ap:0, pk:0, yc:0, rc:0, cs:0, conceded:0 };
+        const seasons = [...new Set(pData.map(x => Number(x.season)))];
+        pData.forEach(d => {
+            total.match += Number(d.match); total.goal += Number(d.goal); total.assist += Number(d.assist);
+            total.ap += (Number(d.goal) + Number(d.assist)); total.pk += Number(d.pk);
+            total.yc += Number(d.yc); total.rc += Number(d.rc); total.cs += Number(d.cleansheet);
+            total.conceded += Number(d.conceded || 0);
+        });
+        let gkInfo = (total.conceded > 0 || total.cs > 0) ? `<div class="modal-item"><label>통산 실점</label><span>${total.conceded}실점</span></div><div class="modal-item"><label>클린시트</label><span>${total.cs}회</span></div>` : `<div class="modal-item-wide"><label>클린시트</label><span>-</span></div>`;
+        document.getElementById('modal-player-name').innerText = name + " 선수 통산 기록";
+        document.getElementById('modal-data').innerHTML = `<div class="modal-item-wide"><label>소속 시즌</label><span>${formatSeasons(seasons)}</span></div><div class="modal-item"><label>통산 출전</label><span>${total.match}경기</span></div><div class="modal-item"><label>통산 득점</label><span>${total.goal}골</span></div><div class="modal-item"><label>통산 도움</label><span>${total.assist}도움</span></div><div class="modal-item"><label>공격포인트</label><span>${total.ap}pt</span></div><div class="modal-item"><label>PK 성공</label><span>${total.pk}</span></div><div class="modal-item"><label>경고/퇴장</label><span>${total.yc}/${total.rc}</span></div>${gkInfo}`;
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
@@ -333,7 +352,7 @@
         const mgrs = [...new Set(rawData.map(m => m.bfc_manager))].filter(Boolean).sort();
         const mSel = document.getElementById('select-manager');
         mgrs.forEach(m => mSel.add(new Option(m, m)));
-        const lgs = ["K리그1", "K리그2", "K3리그", "플레이오프", "코리아컵"];
+        const lgs = ["K리그1", "K리그2", "K3리그", "플레이오프", "코리아컵". "챌린저스컵"];
         const lSel = document.getElementById('select-league');
         lgs.forEach(l => lSel.add(new Option(l, l)));
     }
@@ -353,3 +372,4 @@
 </script>
 </body>
 </html>
+
