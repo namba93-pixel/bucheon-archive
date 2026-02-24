@@ -163,17 +163,87 @@
         }
     }
 
+    <script>
+    /* 다른 로직은 그대로 두시고, 이 두 함수(parseCSV, renderTeamTable)만 교체하시면 됩니다 */
+
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim());
         if (rows.length < 1) return [];
+
+        // 헤더에서 보이지 않는 특수기호를 제거하고 소문자로 통일
         const heads = rows[0].split(',').map(h => h.replace(/[^\w]/gi, '').toLowerCase().trim());
+        
         return rows.slice(1).map(row => {
-            const vals = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(',');
+            // [수정 핵심] 쉼표 분리 시 데이터가 따옴표로 감싸져 있어도 정확히 분리하는 정규식
+            const vals = [];
+            let start = 0;
+            let inQuotes = false;
+            for (let i = 0; i < row.length; i++) {
+                if (row[i] === '"') inQuotes = !inQuotes;
+                if (row[i] === ',' && !inQuotes) {
+                    vals.push(row.substring(start, i));
+                    start = i + 1;
+                }
+            }
+            vals.push(row.substring(start));
+
             let o = {};
-            heads.forEach((h, i) => { if(h) o[h] = (vals[i] || "").replace(/"/g, "").trim(); });
+            heads.forEach((h, i) => {
+                let val = (vals[i] || "").replace(/^"|"$/g, "").trim(); // 앞뒤 따옴표 제거
+                o[h] = val;
+            });
             return o;
         });
     }
+
+    function renderTeamTable() {
+        const selYear = document.getElementById('select-year').value;
+        const selLoc = document.getElementById('select-location').value;
+        const selMgr = document.getElementById('select-manager').value;
+
+        let filtered = rawData.filter(m => {
+            const isHome = m.hometeam && m.hometeam.includes("부천");
+            if (selYear && !m.date.startsWith(selYear)) return false;
+            if (selMgr && m.bfc_manager !== selMgr) return false;
+            if (selLoc && (selLoc === 'home' ? !isHome : isHome)) return false;
+            return true;
+        });
+
+        document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
+        
+        document.getElementById('table-body').innerHTML = filtered.map(m => {
+            const isHome = m.hometeam && m.hometeam.includes("부천");
+            const bS = m.homescored || "0";
+            const oS = m.awayscored || "0";
+            
+            // 승패 계산 로직 보정
+            const myScore = parseInt(bS);
+            const oppScore = parseInt(oS);
+            let res = "무";
+            if (isHome) {
+                if (myScore > oppScore) res = "승"; else if (myScore < oppScore) res = "패";
+            } else {
+                if (oppScore > myScore) res = "승"; else if (oppScore < myScore) res = "패";
+            }
+
+            const oppName = isHome ? m.awayteam : m.hometeam;
+
+            return `<tr>
+                <td>${m.date || '-'}</td>
+                <td>${m.league || '-'}</td>
+                <td><b>${oppName || '-'}</b></td>
+                <td>${m.stadium || '-'}</td>
+                <td>${bS}:${oS}</td>
+                <td class="${res==='승'?'win':''}">${res}</td>
+                <td>${Number(String(m.attendance).replace(/,/g, '') || 0).toLocaleString()}</td>
+                <td>${m.bfc_manager || '-'}</td>
+            </tr>`;
+        }).join('');
+
+        const total = filtered.length;
+        document.getElementById('stat-total').innerText = total + "경기";
+    }
+</script>
 
     // [v7.4 기능 로직]
     function getUnifiedTeamName(n) { const m = { "상주 상무": "상무", "김천 상무": "상무", "경찰 축구단": "경찰", "아산 무궁화": "경찰" }; return m[n] || n; }
@@ -318,3 +388,4 @@
 </script>
 </body>
 </html>
+
