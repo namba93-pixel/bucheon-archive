@@ -308,7 +308,8 @@
     const nameSearch = document.getElementById('p-search-name').value;
     const selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
     
-    document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회(세부)</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">포인트 ↕</th><th>PK</th><th>CS</th><th>경고</th></tr>`;
+    // 헤더 복구
+    document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">포인트 ↕</th><th>PK</th><th>CS</th><th>경고</th></tr>`;
 
     // 1. 데이터 필터링
     let filtered = playerSeasonData.filter(p => {
@@ -318,33 +319,42 @@
         return true;
     });
 
-    // 2. 선수별/시즌별 그룹화 (선택된 대회 기록 합산)
+    // 2. 선수별/시즌별 그룹화 (합산 로직)
     const grouped = {};
     filtered.forEach(p => {
         const key = `${p.name}_${p.season}`;
         if (!grouped[key]) {
             grouped[key] = {
-                name: p.name,
-                season: p.season,
+                name: p.name, season: p.season,
                 match: 0, goal: 0, assist: 0, pk: 0, cs: 0, yc: 0,
-                details: [] // 대회별 세부 기록 저장
+                details: {} // 대회별로 다시 묶음
             };
         }
+        const uniLg = getUnifiedLeagueName(p.league);
+        if (!grouped[key].details[uniLg]) {
+            grouped[key].details[uniLg] = { m: 0, g: 0, a: 0, pk: 0, cs: 0, yc: 0 };
+        }
+
+        // 전체 합산
         grouped[key].match += parseInt(p.match) || 0;
         grouped[key].goal += parseInt(p.goal) || 0;
         grouped[key].assist += parseInt(p.assist) || 0;
         grouped[key].pk += parseInt(p.pk) || 0;
         grouped[key].cs += parseInt(p.cleansheet) || 0;
         grouped[key].yc += parseInt(p.yc) || 0;
-        grouped[key].details.push({
-            league: getUnifiedLeagueName(p.league),
-            m: p.match, g: p.goal, a: p.assist
-        });
+
+        // 대회별 합산
+        grouped[key].details[uniLg].m += parseInt(p.match) || 0;
+        grouped[key].details[uniLg].g += parseInt(p.goal) || 0;
+        grouped[key].details[uniLg].a += parseInt(p.assist) || 0;
+        grouped[key].details[uniLg].pk += parseInt(p.pk) || 0;
+        grouped[key].details[uniLg].cs += parseInt(p.cleansheet) || 0;
+        grouped[key].details[uniLg].yc += parseInt(p.yc) || 0;
     });
 
     let displayData = Object.values(grouped);
 
-    // 3. 정렬 로직 (공격포인트/경기수 등)
+    // 3. 정렬 로직 (메인 합산치 기준)
     displayData.sort((a, b) => {
         let vA, vB;
         if (sortState.column === 'ap') {
@@ -358,28 +368,37 @@
     // 4. 테이블 렌더링
     document.getElementById('table-body').innerHTML = displayData.map(p => {
         const totalAp = p.goal + p.assist;
+        const hasMultiple = Object.keys(p.details).length > 1;
         
-        // 대회별 세부 기록 문자열 생성 (2pt 작은 글씨 효과)
-        const detailHtml = p.details.length > 1 ? 
-            `<div style="font-size: 0.75rem; color: #888; margin-top: 4px; line-height: 1.2;">` + 
-            p.details.map(d => `${d.league}: ${d.m}경기 ${d.g}골 ${d.a}도움`).join('<br>') + 
-            `</div>` : `<span style="font-size: 0.75rem; color: #888;">${p.details[0].league}</span>`;
+        // 대회별 세부 행 생성 로직
+        let detailsHtml = "";
+        if (hasMultiple) {
+            detailsHtml = Object.entries(p.details).map(([lgName, d]) => {
+                const dAp = d.g + d.a;
+                return `
+                <tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;">
+                    <td style="border:none;"></td><td style="border:none;"></td>
+                    <td style="text-align:left; padding-left:20px;">└ ${lgName}</td>
+                    <td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${dAp}</td>
+                    <td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td>
+                </tr>`;
+            }).join('');
+        }
 
-        return `<tr>
-            <td>${p.season}</td>
-            <td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td>
-            <td style="text-align: left; padding-left: 15px;">
-                <span style="font-weight: bold;">${selectedLeagues.length > 1 ? "선택대회 합산" : p.details[0].league}</span>
-                ${detailHtml}
-            </td>
-            <td>${p.match}</td>
-            <td>${p.goal}</td>
-            <td>${p.assist}</td>
-            <td class="${sortState.column==='ap'?'highlight-red':''}" style="font-weight:bold;">${totalAp}</td>
-            <td>${p.pk}</td>
-            <td>${p.cs}</td>
-            <td>${p.yc}</td>
-        </tr>`;
+        // 메인 합산 행
+        const mainRow = `
+            <tr style="${hasMultiple ? 'background-color: #fffde7;' : ''}">
+                <td>${p.season}</td>
+                <td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td>
+                <td style="font-weight:bold; text-align:left;">${hasMultiple ? '전체 시즌' : Object.keys(p.details)[0]}</td>
+                <td style="font-weight:bold;">${p.match}</td>
+                <td style="font-weight:bold;">${p.goal}</td>
+                <td style="font-weight:bold;">${p.assist}</td>
+                <td class="${sortState.column==='ap'?'highlight-red':''}" style="font-weight:bold;">${totalAp}</td>
+                <td>${p.pk}</td><td>${p.cs}</td><td>${p.yc}</td>
+            </tr>`;
+
+        return mainRow + detailsHtml;
     }).join('');
 }
 
@@ -456,4 +475,5 @@
 </script>
 </body>
 </html>
+
 
