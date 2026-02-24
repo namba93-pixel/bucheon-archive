@@ -55,9 +55,9 @@
 </div>
 
 <header>
-    <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 공식경기 아카이브</h1></a>
+    <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 공식경기 기록 포털</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
-    <div class="stats-dashboard">
+    <div class="stats-dashboard"> <span>통산 </span>
         <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
         <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
     </div>
@@ -71,9 +71,9 @@
 <div class="container">
     <div id="team-section">
         <div class="filter-container">
-            <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
-            <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
-            <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
+            <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
+            <div class="filter-item"><label>홈/원정 경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
+            <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
             <div class="filter-item">
                 <label>대회별 조회</label>
                 <select id="select-league" onchange="updateView()">
@@ -509,6 +509,7 @@
 </script>
 </body>
 </html>
+
 
 
 
