@@ -223,14 +223,30 @@
     }
 
     function switchMode(m) {
-        currentMode = m; isTotalRankMode = false;
-        document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none';
-        document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
-        document.getElementById('mode-t').className = (m === 'team' ? 'mode-btn active' : 'mode-btn');
-        document.getElementById('mode-p').className = (m === 'player' ? 'mode-btn active' : 'mode-btn');
-        if(m === 'player') { sortState = { column: 'match', direction: 'desc' }; calculateTotalRankings(); }
-        updateView();
+    currentMode = m; 
+    isTotalRankMode = false;
+    
+    // [보정] 모드 전환 시 팀 기록의 전적 조회 필터와 헤더를 초기화
+    currentFilter = { opponent: null, stadium: null };
+    if (document.getElementById('dynamic-header')) {
+        document.getElementById('dynamic-header').style.display = 'none';
     }
+    
+    document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none';
+    document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
+    document.getElementById('mode-t').className = (m === 'team' ? 'mode-btn active' : 'mode-btn');
+    document.getElementById('mode-p').className = (m === 'player' ? 'mode-btn active' : 'mode-btn');
+    
+    // 선수 기록 모드로 갈 때 랭킹 갱신
+    if(m === 'player') { 
+        sortState = { column: 'match', direction: 'desc' }; 
+        calculateTotalRankings(); 
+    } else {
+        sortState = { column: 'date', direction: 'desc' };
+    }
+    
+    updateView();
+}
 
     function updateView() {
         if (currentMode === 'team') renderTeamTable();
@@ -475,5 +491,6 @@
 </script>
 </body>
 </html>
+
 
 
