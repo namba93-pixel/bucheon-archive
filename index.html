@@ -3,26 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>부천FC1995 공식경기 통산기록 조회 사이트</title>
+    <title>부천FC1995 공식경기 아카이브</title>
     <style>
         :root { --bfc-red: #ed1c24; --bfc-black: #1a1a1a; --bg-gray: #f4f4f4; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg-gray); color: #333; display: flex; flex-direction: column; min-height: 100vh; }
         header { background: linear-gradient(135deg, var(--bfc-black) 60%, var(--bfc-red)); color: white; padding: 40px 20px 60px; text-align: center; border-bottom: 6px solid var(--bfc-red); position: relative; }
         .home-link { text-decoration: none; color: white; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
         header h1 { margin: 0; font-size: 1.8rem; font-weight: 900; }
-        .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 20px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
+        .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 10px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
         .stats-dashboard span { margin: 0 8px; font-weight: 600; }
         .mode-switch { display: flex; justify-content: center; gap: 10px; margin-top: -25px; position: relative; z-index: 100; }
         .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid var(--bfc-red); }
         .mode-btn.active { background: var(--bfc-red); color: white; }
         .container { max-width: 1300px; margin: 30px auto 50px; padding: 0 15px; flex: 1; position: relative; z-index: 10; }
         .ranking-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px; }
-        .ranking-box { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 4px solid var(--bfc-black); }
+        .ranking-box { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 4px solid var(--bfc-black); position: relative; }
         .ranking-box h3 { margin: 0 0 15px 0; font-size: 0.95rem; color: var(--bfc-red); }
         .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
+        .more-btn { background: none; border: none; color: #999; font-size: 0.75rem; cursor: pointer; float: right; margin-top: -35px; }
         .filter-container { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .filter-item { display: flex; flex-direction: column; gap: 8px; }
         .filter-item label { font-size: 0.85rem; font-weight: bold; color: #666; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .checkbox-group label { font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         select, input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; outline: none; }
         .view-header { margin-top: 20px; background: white; padding: 20px; border-radius: 15px; border-left: 6px solid var(--bfc-red); box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; flex-direction: column; gap: 10px; }
         .view-summary { font-size: 0.95rem; color: #555; border-top: 1px dashed #eee; padding-top: 10px; }
@@ -33,10 +36,6 @@
         td { padding: 12px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
         .clickable { color: var(--bfc-black); cursor: pointer; text-decoration: underline; text-decoration-color: #ddd; }
         .win { color: var(--bfc-red); font-weight: bold; }
-        .highlight-red { color: var(--bfc-red); font-weight: bold; }
-        .data-notice { margin-top: 20px; padding: 12px 18px; font-size: 0.85rem; color: #777; line-height: 1.6; border-left: 4px solid var(--bfc-red); background: #fff; border-radius: 0 10px 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 500px; border-radius: 20px; padding: 30px; position: relative; }
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; }
         @media (max-width: 1000px) { .ranking-container { grid-template-columns: repeat(2, 1fr); } }
     </style>
@@ -45,7 +44,6 @@
 
 <div id="modal-overlay" onclick="closeModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <span style="position:absolute; top:15px; right:20px; font-size:1.5rem; cursor:pointer; color:#999;" onclick="closeModal()">&times;</span>
         <h2 id="modal-player-name" style="border-bottom:3px solid var(--bfc-red); padding-bottom:15px; margin-bottom:20px; text-align:center;"></h2>
         <div id="modal-data" style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; text-align:center;"></div>
     </div>
@@ -53,6 +51,7 @@
 
 <header>
     <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 공식경기 아카이브</h1></a>
+    <div id="today-date" style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
         <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
         <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
@@ -71,22 +70,26 @@
             <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
         </div>
-        <div class="data-notice">📌 <strong>데이터 안내:</strong> K3리그 결과 중 관중 수가 누락된 경기와 코로나19로 인한 무관중 경기는 0으로 표기되어 있습니다. <br> (관중 순 정렬 시, 정확한 통계 조회를 위해 0명으로 기록된 데이터는 제외하고 표시됩니다.)</div>
+        <div class="checkbox-group" id="league-filters">
+            <label><input type="checkbox" value="all" checked onchange="toggleAllLeagues(this)"> 전체선택</label>
+            <label><input type="checkbox" name="league" value="K리그1" checked onchange="updateView()"> K리그1</label>
+            <label><input type="checkbox" name="league" value="K리그2" checked onchange="updateView()"> K리그2</label>
+            <label><input type="checkbox" name="league" value="플레이오프" checked onchange="updateView()"> 플레이오프</label>
+            <label><input type="checkbox" name="league" value="코리아컵" checked onchange="updateView()"> 코리아컵</label>
+        </div>
     </div>
 
     <div id="player-section" style="display: none;">
         <div class="ranking-container">
-            <div class="ranking-box"><h3>🏃‍♂️ 통산 출전 TOP 7</h3><div id="rank-match"></div></div>
-            <div class="ranking-box"><h3>⚽ 통산 득점 TOP 7</h3><div id="rank-goal"></div></div>
-            <div class="ranking-box"><h3>🔥 포인트 TOP 7</h3><div id="rank-ap"></div></div>
-            <div class="ranking-box"><h3>🧤 클린시트 TOP 7</h3><div id="rank-cs"></div></div>
-            <button class="mode-btn" style="grid-column: span 4; margin-top: 10px;" onclick="showAllRankings('match')">🏆 역대 통산 기록 순위 전체보기</button>
+            <div class="ranking-box"><h3>🏃‍♂️ 통산 출전 TOP 7</h3><button class="more-btn" onclick="showAllRankings('match')">more</button><div id="rank-match"></div></div>
+            <div class="ranking-box"><h3>⚽ 통산 득점 TOP 7</h3><button class="more-btn" onclick="showAllRankings('goal')">more</button><div id="rank-goal"></div></div>
+            <div class="ranking-box"><h3>🔥 포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
+            <div class="ranking-box"><h3>🧤 클린시트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('cs')">more</button><div id="rank-cs"></div></div>
         </div>
         <div class="filter-container">
             <div class="filter-item"><label>시즌 선택</label><select id="p-select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
             <div class="filter-item"><label>선수명 검색</label><input type="text" id="p-search-name" placeholder="이름 입력" onkeyup="updateView()"></div>
         </div>
-        <div class="data-notice">📌 <strong>데이터 안내:</strong> 선수 기록은 2013년 프로 진출 이후 공식 경기 데이터만을 바탕으로 집계됩니다.</div>
     </div>
 
     <div id="dynamic-header" class="view-header">
@@ -125,8 +128,12 @@
             rawData = parseCSV(await tRes.text());
             playerSeasonData = parseCSV(await pRes.text());
             
-            fixAllTimeStats(); // [요청] 상단 대시보드 통산 고정
-            calculateTotalRankings(); // [요청] TOP 7 통산 고정
+            // 날짜 표시
+            const now = new Date();
+            document.getElementById('today-date').innerText = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 기준`;
+
+            fixAllTimeStats();
+            calculateTotalRankings();
             initFilters();
             updateView();
         } catch (e) { console.error("Load Error", e); }
@@ -149,24 +156,24 @@
         });
     }
 
-    // [요청] 조사 처리 함수
     function getParticle(name) {
-        if (!name) return "";
         const charCode = name.charCodeAt(name.length - 1);
         const hasBatchim = (charCode - 0xAC00) % 28 > 0;
         return hasBatchim ? "과의" : "와의";
     }
 
-    // [요청] 소속 시즌 범위 표기
-    function formatSeasons(years) {
-        if (!years.length) return "";
-        years.sort((a, b) => a - b);
-        let res = []; let start = years[0], end = years[0];
-        for (let i = 1; i <= years.length; i++) {
-            if (i < years.length && parseInt(years[i]) === parseInt(end) + 1) end = years[i];
-            else { res.push(start === end ? start : `${start}~${String(end).slice(-2)}`); if (i < years.length) { start = years[i]; end = years[i]; } }
-        }
-        return res.join(', ');
+    function toggleAllLeagues(el) {
+        document.querySelectorAll('input[name="league"]').forEach(cb => cb.checked = el.checked);
+        updateView();
+    }
+
+    function switchMode(m) {
+        currentMode = m; isTotalRankMode = false;
+        document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none';
+        document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
+        document.getElementById('mode-t').classList.toggle('active', m === 'team');
+        document.getElementById('mode-p').classList.toggle('active', m === 'player');
+        updateView();
     }
 
     function fixAllTimeStats() {
@@ -188,29 +195,18 @@
         document.getElementById('stat-rate').innerText = total ? (((w + d * 0.5) / total) * 100).toFixed(1) + "%" : "0%";
     }
 
-    function switchMode(m) {
-        currentMode = m; isTotalRankMode = false;
-        document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none';
-        document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
-        document.getElementById('mode-t').classList.toggle('active', m === 'team');
-        document.getElementById('mode-p').classList.toggle('active', m === 'player');
-        updateView();
-    }
-
-    function updateView() {
-        if (currentMode === 'team') renderTeamTable();
-        else { if (isTotalRankMode) renderAllRankingsTable(); else renderPlayerTable(); }
-    }
-
     function renderTeamTable() {
         const year = document.getElementById('select-year').value;
         const loc = document.getElementById('select-location').value;
         const mgr = document.getElementById('select-manager').value;
+        
+        // 체크된 대회 필터링
+        const selectedLeagues = Array.from(document.querySelectorAll('input[name="league"]:checked')).map(cb => cb.value);
 
         const header = document.getElementById('dynamic-header');
         const summary = document.getElementById('dynamic-summary');
 
-        if (currentFilter.opponent || currentFilter.stadium || year || mgr) {
+        if (currentFilter.opponent || currentFilter.stadium || year || mgr || selectedLeagues.length < 5) {
             header.style.display = "flex";
             let titleParts = [];
             if (currentFilter.stadium) titleParts.push(`${currentFilter.stadium}에서`);
@@ -223,15 +219,18 @@
         let filtered = rawData.filter(m => {
             const isH = m.hometeam.includes("부천");
             const opp = isH ? m.awayteam : m.hometeam;
+            const leagueMatch = selectedLeagues.some(lg => m.league.includes(lg));
+            
             if (currentFilter.opponent && opp !== currentFilter.opponent) return false;
             if (currentFilter.stadium && m.stadium !== currentFilter.stadium) return false;
             if (year && !m.date.startsWith(year)) return false;
             if (mgr && m.bfc_manager !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false;
+            if (!leagueMatch) return false;
             return true;
         });
 
-        // [요청] 조회 결과 요약 계산
+        // 결과 요약 계산
         let tw=0, td=0, tl=0, tgf=0, tga=0;
         filtered.forEach(m => {
             const isH = m.hometeam.includes("부천");
@@ -241,16 +240,13 @@
             if (myS > opS) tw++; else if (myS < opS) tl++; else td++;
         });
         const tRate = filtered.length ? (((tw + td * 0.5) / filtered.length) * 100).toFixed(1) : 0;
-        if(header.style.display !== "none") {
-            summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점 / 승률 <span>${tRate}%</span>)`;
-        }
+        summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점 / 승률 <span>${tRate}%</span>)`;
 
-        // [요청] 관중 0명 제외 정렬
+        // 정렬 및 0명 제외 로직
         let displayData = [...filtered];
         if (sortState.column === 'attendance') {
             displayData = displayData.filter(m => (parseInt(String(m.attendance).replace(/,/g,''))||0) > 0);
         }
-
         displayData.sort((a,b) => {
             let vA = a[sortState.column], vB = b[sortState.column];
             if(sortState.column === 'attendance') { vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; }
@@ -261,8 +257,7 @@
         document.getElementById('table-body').innerHTML = displayData.map(m => {
             const isH = m.hometeam.includes("부천");
             const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-            const myS = isH ? hS : aS, opS = isH ? aS : hS;
-            let res = myS > opS ? "승" : (myS < opS ? "패" : "무");
+            const res = (isH ? hS : aS) > (isH ? aS : hS) ? "승" : ((isH ? hS : aS) < (isH ? aS : hS) ? "패" : "무");
             return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfc_manager}</td></tr>`;
         }).join('');
     }
@@ -270,14 +265,14 @@
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value;
         const name = document.getElementById('p-search-name').value;
-        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th>PK</th><th>실점</th><th>CS</th><th>경고</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th>시즌</th><th>이름</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th>PK</th><th>실점</th><th>CS</th><th>경고</th></tr>`;
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!name || p.name.includes(name)));
         filtered.sort((a,b) => (sortState.direction === 'asc' ? (parseInt(a[sortState.column])||0) - (parseInt(b[sortState.column])||0) : (parseInt(b[sortState.column])||0) - (parseInt(a[sortState.column])||0)));
         document.getElementById('table-body').innerHTML = filtered.map(p => `<tr><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td>${p.match}</td><td>${p.goal}</td><td>${p.assist}</td><td>${p.pk||0}</td><td>${p.conceded||0}</td><td>${p.cleansheet||0}</td><td>${p.yc}</td></tr>`).join('');
     }
 
     function renderAllRankingsTable() {
-        document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">공격포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">CS ↕</th><th>소속시즌</th></tr>`;
         const t = {};
         playerSeasonData.forEach(d => {
             if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] };
@@ -286,7 +281,17 @@
             t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season);
         });
         let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]);
-        document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td>${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join('');
+        document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td>${p.match}</td><td>${p.goal}</td><td>${p.assist}</td><td>${p.ap}</td><td>${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join('');
+    }
+
+    function formatSeasons(years) {
+        years.sort((a, b) => a - b);
+        let res = []; let start = years[0], end = years[0];
+        for (let i = 1; i <= years.length; i++) {
+            if (i < years.length && parseInt(years[i]) === parseInt(end) + 1) end = years[i];
+            else { res.push(start === end ? start : `${start}~${String(end).slice(-2)}`); if (i < years.length) { start = years[i]; end = years[i]; } }
+        }
+        return res.join(', ');
     }
 
     function calculateTotalRankings() {
@@ -320,8 +325,7 @@
     function filterByOpponent(name) { currentFilter.opponent = name; updateView(); }
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     function showAllRankings(col) { isTotalRankMode = true; sortState = { column: col, direction: 'desc' }; updateView(); }
-    function exitTotalRanking() { isTotalRankMode = false; updateView(); }
-    function resetToAll() { currentFilter = { opponent: null, stadium: null }; updateView(); }
+    function resetToAll() { currentFilter = { opponent: null, stadium: null }; isTotalRankMode = false; updateView(); }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
     function showPlayerTotal(name) {
         const pData = playerSeasonData.filter(p => p.name === name);
