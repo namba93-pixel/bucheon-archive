@@ -386,12 +386,15 @@
         const totalAp = p.goal + p.assist;
         const hasMultiple = Object.keys(p.details).length > 1;
         
-        // 대회별 세부 행 생성 로직
-        let detailsHtml = "";
-        if (hasMultiple) {
-            detailsHtml = Object.entries(p.details).map(([lgName, d]) => {
-                const dAp = d.g + d.a;
-                return `
+    // 대회별 세부 행 생성 로직
+    let detailsHtml = "";
+    if (hasMultiple) {
+        // [수정] 출전 경기 수(m)가 많은 순서대로 정렬하여 노출합니다.
+        const sortedDetails = Object.entries(p.details).sort(([, a], [, b]) => b.m - a.m);
+        
+        detailsHtml = sortedDetails.map(([lgName, d]) => {
+            const dAp = d.g + d.a;
+            return `
                 <tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;">
                     <td style="border:none;"></td><td style="border:none;"></td>
                     <td style="text-align:left; padding-left:20px;">└ ${lgName}</td>
@@ -506,6 +509,7 @@
 </script>
 </body>
 </html>
+
 
 
 
