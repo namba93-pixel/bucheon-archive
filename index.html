@@ -89,6 +89,7 @@
                     <option value="K3리그">K3리그</option>
                     <option value="플레이오프">플레이오프</option>
                     <option value="코리아컵">코리아컵</option>
+                    <option value="챌린저스컵">챌린저스컵</option>
                 </select>
             </div>
         </div>
@@ -144,11 +145,12 @@
         });
     }
 
-    // [보정] K3리그 및 챌린저스리그 통합 판별 로직 복구
+    // [보정] 챌린저스컵을 K3리그와 별개로 독립 판별하도록 수정
     function getUnifiedLeagueName(n) { 
         if(!n) return ""; const l = n.toLowerCase();
         if(l.includes("k리그1") || l.includes("k-리그1")) return "K리그1"; 
-        if(l.includes("k리그2") || l.includes("챌린지")) return "K리그2"; 
+        if(l.includes("k리그2") || l.includes("챌린지리그") || (l.includes("챌린지") && !l.includes("컵"))) return "K리그2"; 
+        if(l.includes("챌린저스컵")) return "챌린저스컵"; // 챌린저스컵 우선 순위
         if(l.includes("k3리그") || l.includes("챌린저스")) return "K3리그";
         if(l.includes("플레이오프") || l.includes("승강") || l.includes("준플레이오프")) return "플레이오프";
         if(l.includes("fa컵") || l.includes("코리아컵")) return "코리아컵"; return n; 
