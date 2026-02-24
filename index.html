@@ -179,16 +179,26 @@
 
     // [중요 수정] 대회명 통합 로직 (K3리그, 챌린저스컵, 플레이오프 범위 확대)
     function getUnifiedLeagueName(n) { 
-        if(!n) return "";
-        const league = n.toLowerCase();
-        if(league.includes("k리그1") || league.includes("k-리그1")) return "K리그1"; 
-        if(league.includes("k리그2") || league.includes("챌린지")) return "K리그2"; 
-        if(league.includes("k3리그") || league.includes("챌린저스리그")) return "K3리그";
-        if(league.includes("챌린저스컵")) return "챌린저스컵";
-        if(league.includes("fa컵") || league.includes("코리아컵")) return "코리아컵";
-        if(league.includes("플레이오프") || league.includes("준플레이오프")) return "플레이오프";
-        return n; 
+    if(!n) return "";
+    const league = n.toLowerCase();
+
+    // 1. 플레이오프 우선 판정 (준플레이오프, 승강 플레이오프 등 포함)
+    if(league.includes("플레이오프") || league.includes("승강")) {
+        return "플레이오프";
     }
+
+    // 2. 나머지 대회 판정
+    if(league.includes("k리그1") || league.includes("k-리그1")) return "K리그1"; 
+    
+    // 준플레이오프가 빠진 순수 K리그2/챌린지만 K리그2로 분류
+    if(league.includes("k리그2") || league.includes("챌린지")) return "K리그2"; 
+    
+    if(league.includes("k3리그") || league.includes("챌린저스리그")) return "K3리그";
+    if(league.includes("챌린저스컵")) return "챌린저스컵";
+    if(league.includes("fa컵") || league.includes("코리아컵")) return "코리아컵";
+    
+    return n; 
+}
 
     function getParticle(name) {
         const charCode = name.charCodeAt(name.length - 1);
@@ -386,4 +396,5 @@
 </script>
 </body>
 </html>
+
 
