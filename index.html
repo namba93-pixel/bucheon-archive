@@ -70,9 +70,18 @@
 <div class="container">
     <div id="team-section">
         <div class="filter-container">
-            <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
-            <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
-            <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
+            <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
+            <div class="filter-item"><label>홈/원정경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
+            <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
+            <div class="filter-item"><label>대회별 조회</label><select id="select-league" onchange="updateView()"><option value="">모든 대회</option>
+                <option value="K리그1">K리그1</option>
+                <option value="K리그2">K리그2</option>
+                <option value="K3리그">K3리그</option>
+                <option value="플레이오프">플레이오프</option>
+                <option value="코리아컵">코리아컵</option>
+                <option value="챌린저스컵">챌린저스컵</option>
+    </select>
+</div>
         </div>
         <div class="data-notice">📌 <strong>데이터 안내:</strong> K3리그 결과 중 관중 수가 누락된 경기와 코로나19로 인한 무관중 경기는 0으로 표기되어 있습니다. <br> (관중 순 정렬 시 0명 데이터는 제외됩니다.)</div>
     </div>
@@ -235,6 +244,7 @@
         const year = document.getElementById('select-year').value;
         const loc = document.getElementById('select-location').value;
         const mgr = document.getElementById('select-manager').value;
+        const selLg = document.getElementById('select-league').value; // 추가
         const header = document.getElementById('dynamic-header');
         const summary = document.getElementById('dynamic-summary');
 
@@ -252,6 +262,12 @@
             if (year && !m.date.startsWith(year)) return false;
             if (mgr && m.bfc_manager !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false;
+
+            // 대회 필터링 로직 추가
+            if (selLg) {
+                const uniLg = getUnifiedLeagueName(m.league);
+                if (uniLg !== selLg) return false;
+            }
             return true;
         });
 
@@ -383,4 +399,5 @@
 </script>
 </body>
 </html>
+
 
