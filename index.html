@@ -148,21 +148,29 @@
     }
 
     function parseCSV(text) {
-        const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
-        if (rows.length < 1) return [];
-        const heads = rows[0].split(',').map(h => h.trim().toLowerCase());
-        return rows.slice(1).map(line => {
-            const vals = []; let start = 0, inQ = false;
-            for (let i = 0; i < line.length; i++) {
-                if (line[i] === '"') inQ = !inQ;
-                if (line[i] === ',' && !inQ) { vals.push(line.substring(start, i)); start = i + 1; }
-            }
-            vals.push(line.substring(start));
-            let o = {};
-            heads.forEach((h, i) => o[h] = (vals[i] || "").trim().replace(/^"|"$/g, ""));
-            return o;
+    const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
+    if (rows.length < 1) return [];
+    
+    // 헤더의 공백과 보이지 않는 특수문자까지 제거하여 매칭 확률을 극대화합니다.
+    const heads = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/[^\w]/gi, ''));
+    
+    return rows.slice(1).map(line => {
+        const vals = []; let start = 0, inQ = false;
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === '"') inQ = !inQ;
+            if (line[i] === ',' && !inQ) { vals.push(line.substring(start, i)); start = i + 1; }
+        }
+        vals.push(line.substring(start));
+        
+        let o = {};
+        heads.forEach((h, i) => {
+            // 데이터 알맹이 앞뒤의 불필요한 공백과 따옴표를 완전히 제거합니다.
+            let v = (vals[i] || "").trim().replace(/^"|"$/g, "").trim();
+            o[h] = v;
         });
-    }
+        return o;
+    });
+}
 
     function getUnifiedLeagueName(n) { 
         if(!n) return "";
@@ -272,14 +280,30 @@
 
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
         document.getElementById('table-body').innerHTML = displayData.map(m => {
-            const isH = m.hometeam && m.hometeam.includes("부천");
-            const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-            const myS = isH ? hS : aS, opS = isH ? aS : hS;
-            let res = myS > opS ? "승" : (myS < opS ? "패" : "무");
-            const oppName = isH ? m.awayteam : m.hometeam;
-            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${oppName}')">${oppName}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfc_manager}</td></tr>`;
-        }).join('');
-    }
+        const isH = (m.hometeam || "").includes("부천");
+        // 데이터가 비어있을 경우 NaN 방지를 위한 기본값(0) 처리
+        const hS = parseInt(m.homescored) || 0;
+        const aS = parseInt(m.awayscored) || 0;
+        const attn = parseInt(String(m.attendance || "").replace(/,/g, '')) || 0;
+        
+        const myS = isH ? hS : aS, opS = isH ? aS : hS;
+        let res = "무";
+        if (myS > opS) res = "승"; else if (myS < opS) res = "패";
+        
+        const oppName = isH ? (m.awayteam || "미정") : (m.hometeam || "미정");
+        
+        return `<tr>
+            <td>${m.date || "-"}</td>
+            <td>${m.league || "-"}</td>
+            <td><b class="clickable" onclick="filterByOpponent('${oppName}')">${oppName}</b></td>
+            <td><span class="clickable" onclick="filterByStadium('${m.stadium || ""}')">${m.stadium || "-"}</span></td>
+            <td>${hS}:${aS}</td>
+            <td class="${res === '승' ? 'win' : ''}">${res}</td>
+            <td>${attn > 0 ? attn.toLocaleString() : "-"}</td>
+            <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+        </tr>`;
+    }).join('');
+}
 
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value;
@@ -359,3 +383,4 @@
 </script>
 </body>
 </html>
+
