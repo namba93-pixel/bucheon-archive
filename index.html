@@ -268,15 +268,16 @@
     }
 
     function renderTeamTable() {
+       // 1. 입력 필드 값 안전하게 읽기
         const year = document.getElementById('select-year').value;
         const loc = document.getElementById('select-location').value;
         const mgr = document.getElementById('select-manager').value;
         const selLg = document.getElementById('select-league').value;
-
-        // [추가] 새 검색 필드 값 읽기
-        const searchOpp = document.getElementById('search-opponent').value.trim();
-        const searchOppMgr = document.getElementById('search-opp-manager').value.trim();
-        const searchRef = document.getElementById('search-referee').value.trim();
+    
+        // 신규 검색창 값 (없을 경우 빈 문자열로 처리)
+        const searchOpp = (document.getElementById('search-opponent')?.value || "").trim().toLowerCase();
+        const searchOppMgr = (document.getElementById('search-opp-manager')?.value || "").trim();
+        const searchRef = (document.getElementById('search-referee')?.value || "").trim();
 
         const header = document.getElementById('dynamic-header');
         const summary = document.getElementById('dynamic-summary');
@@ -292,27 +293,29 @@
             document.getElementById('dynamic-title').innerText = `🔍 ${titleParts.join(" ")} ${seasonText} 경기결과`;
         } else { header.style.display = "none"; }
 
+       // 2. 데이터 필터링 로직 (안전장치 강화)
         let filtered = rawData.filter(m => {
-            const isH = (m.hometeam || "").includes("부천");
-            cconst opponentName = isH ? (m.awayteam || "") : (m.hometeam || "");
-        
-            // 1. 기존 클릭 필터 (전적 조회용)
+            // 부천의 위치에 따른 상대팀명 추출
+            const home = (m.hometeam || "");
+            const away = (m.awayteam || "");
+            const isH = home.includes("부천");
+            const opponentName = isH ? away : home;
+            
+             // [필터 1] 클릭 기반 전적 조회
             if (currentFilter.opponent && opponentName !== currentFilter.opponent) return false;
-            if (currentFilter.stadium && m.stadium !== currentFilter.stadium) return false;
-            // 기타 필터 (시즌, 감독, 장소, 대회 등)
-            if (year && !m.date.startsWith(year)) return false;
-            if (mgr && m.bfcmanager !== mgr && m.bfc_manager !== mgr) return false;
+            if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
+        
+            // [필터 2] 신규 검색창 필터 (입력값이 있을 때만 작동)
+            if (searchOpp && !opponentName.toLowerCase().includes(searchOpp)) return false;
+            if (searchOppMgr && !(m.opp_manager || "").includes(searchOppMgr)) return false;
+            if (searchRef && !(m.referee || "").includes(searchRef)) return false;
+
+            // [필터 3] 기존 드롭다운 필터
+            if (year && !(m.date || "").startsWith(year)) return false;
+            if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false;
             if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false;
 
-            // 2. 검색창 필터 (성현님 요청 사항)
-            // 상대팀 검색: 입력값이 있을 때만 비교하며, 대소문자 구분 없이 포함 여부 확인
-            if (searchOpp && !opponentName.toLowerCase().includes(searchOpp.toLowerCase())) return false;
-        
-            // 상대감독 및 주심 검색 (v16.0 로직 유지)
-            if (searchOppMgr && !(m.opp_manager || "").includes(searchOppMgr)) return false;
-            if (searchRef && !(m.referee || "").includes(searchRef)) return false;
-            
             return true;
         });
 
@@ -540,6 +543,7 @@
 </script>
 </body>
 </html>
+
 
 
 
