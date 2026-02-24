@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -274,36 +275,33 @@ function updateAllTimeStats() {
     const lg = document.getElementById('select-league').value;
 
     // --- 동적 타이틀 생성 로직 ---
-   const header = document.getElementById('dynamic-header');
-    if (currentFilter.opponent || currentFilter.stadium || year || mgr || lg || loc) {
-        header.style.display = "flex";
+    if (currentFilter.opponent || currentFilter.stadium || mgr) {
+        document.getElementById('dynamic-header').style.display = "flex";
         let titleParts = [];
-        if (currentFilter.stadium) titleParts.push(`${currentFilter.stadium}에서`);
-        if (currentFilter.opponent) {
-            const opp = getUnifiedTeamName(currentFilter.opponent);
-            titleParts.push(`${opp}${getParticle(opp)}`);
-        }
-        if (mgr) titleParts.push(`${mgr} 감독의`);
-        
-        const seasonText = year ? `${year}시즌` : "통산";
-        document.getElementById('dynamic-title').innerText = `🔍 ${titleParts.join(" ")} ${seasonText} 경기결과`;
 
-        // 조회 결과 요약 계산
-        let tw=0, td=0, tl=0, tgf=0, tga=0;
-        filtered.forEach(m => {
-            const isH = m.hometeam.includes("부천");
-            const bS = parseInt(m.homescored)||0, oS = parseInt(m.awayscored)||0;
-            const myS = isH ? bS : oS, opS = isH ? oS : bS;
-            tgf += myS; tga += opS;
-            if (myS > opS) tw++; else if (myS < opS) tl++; else td++;
-        });
-        const tRate = filtered.length ? (((tw + td * 0.5) / filtered.length) * 100).toFixed(1) : 0;
-        
-        // 하단 요약 바에만 출력 (상단 대시보드는 건드리지 않음)
-        document.getElementById('dynamic-summary').innerHTML = 
-            `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점 / 승률 <span>${tRate}%</span>)`;
+        // 1. 장소 (~에서)
+        if (currentFilter.stadium) {
+            titleParts.push(`${currentFilter.stadium}에서`);
+        }
+
+        // 2. 상대팀 (~와의/과의)
+        if (currentFilter.opponent) {
+            const oppName = getUnifiedTeamName(currentFilter.opponent);
+            titleParts.push(`${oppName}${getParticle(oppName)}`);
+        }
+
+        // 3. 감독 (xxx 감독의)
+        if (mgr) {
+            titleParts.push(`${mgr} 감독의`);
+        }
+
+        // 4. 시즌 정보 (2024시즌 / 통산)
+        const seasonText = year ? `${year}시즌` : "통산";
+
+        // 최종 문구 조립: "부천종합에서 전남과의 이영민 감독의 통산 경기결과"
+        document.getElementById('dynamic-title').innerText = `🔍 ${titleParts.join(" ")} ${seasonText} 경기결과`;
     } else {
-        header.style.display = "none";
+        document.getElementById('dynamic-header').style.display = "none";
     }
 
     // --- 데이터 필터링 및 출력 (v13.7 로직 유지) ---
@@ -340,6 +338,14 @@ function updateAllTimeStats() {
         return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpp}')">${displayOpp}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfc_manager}</td></tr>`;
     }).join('');
 
+    // 상단 대시보드 업데이트
+    document.getElementById('stat-total').innerText = filtered.length + "경기";
+    document.getElementById('stat-w').innerText = w + "승"; 
+    document.getElementById('stat-d').innerText = d + "무"; 
+    document.getElementById('stat-l').innerText = l + "패";
+    document.getElementById('stat-gf').innerText = gf + "득점"; 
+    document.getElementById('stat-ga').innerText = ga + "실점";
+    document.getElementById('stat-rate').innerText = filtered.length ? (((w + d * 0.5) / filtered.length) * 100).toFixed(1) + "%" : "0%";
     }
 
     function renderPlayerTable() {
@@ -435,4 +441,4 @@ function updateAllTimeStats() {
 
 
 
-
+ 
