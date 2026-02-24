@@ -80,18 +80,7 @@
             <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
             <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
-            <div class="filter-item">
-                <label>대회별 조회</label>
-                <select id="select-league" onchange="updateView()">
-                    <option value="">모든 대회</option>
-                    <option value="K리그1">K리그1</option>
-                    <option value="K리그2">K리그2</option>
-                    <option value="K3리그">K3리그</option>
-                    <option value="플레이오프">플레이오프</option>
-                    <option value="코리아컵">코리아컵</option>
-                    <option value="챌린저스컵">챌린저스컵</option>
-                </select>
-            </div>
+            <div class="filter-item"><label>대회별 조회</label><select id="select-league" onchange="updateView()"><option value="">모든 대회</option><option value="K리그1">K리그1</option><option value="K리그2">K리그2</option><option value="K3리그">K3리그</option><option value="플레이오프">플레이오프</option><option value="코리아컵">코리아컵</option><option value="챌린저스컵">챌린저스컵</option></select></div>
         </div>
         <div class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(3, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력(선택 조회)" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
@@ -145,12 +134,9 @@
         });
     }
 
-    // [보정] 플레이오프 판별 로직 최우선 순위 적용
     function getUnifiedLeagueName(n) { 
         if(!n) return ""; const l = n.toLowerCase();
-        // 플레이오프 단어 포함 시 무조건 플레이오프 분류 (준플레이오프 포함)
         if(l.includes("플레이오프") || l.includes("준플레이오프") || l.includes("승강")) return "플레이오프";
-        
         if(l.includes("k리그1") || l.includes("k-리그1")) return "K리그1"; 
         if(l.includes("k리그2") || l.includes("챌린지")) return "K리그2"; 
         if(l.includes("챌린저스컵")) return "챌린저스컵";
@@ -194,12 +180,28 @@
         const year = document.getElementById('select-year').value, loc = document.getElementById('select-location').value, mgr = document.getElementById('select-manager').value, selLg = document.getElementById('select-league').value;
         const sOpp = (document.getElementById('search-opponent')?.value || "").trim(), sOppMgr = (document.getElementById('search-opp-manager')?.value || "").trim(), sRef = (document.getElementById('search-referee')?.value || "").trim();
         const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary');
+        
         if (currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef) {
             header.style.display = "flex"; let tp = []; const tOpp = sOpp || currentFilter.opponent;
             if (mgr && sOppMgr) tp.push(`${mgr} 감독과 ${sOppMgr} 감독의 맞대결 결과`);
             else { if (currentFilter.stadium) tp.push(`${currentFilter.stadium}에서`); if (tOpp) tp.push(`${tOpp}${getParticle(tOpp)} 경기결과`); else if (sOppMgr) tp.push(`${sOppMgr} 감독과의 경기결과`); else if (sRef) tp.push(`${sRef} 주심이 진행한 경기결과`); else if (mgr) tp.push(`${mgr} 감독의 경기결과`); else tp.push("조회 결과"); }
             if (year) tp.push(`(${year}시즌)`); titleEl.innerText = `🔍 ${tp.join(" ")}`;
+            
+            // [보정] 팀 기록 요약 정보 출력
+            let filtered = rawData.filter(m => {
+                const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = isH ? a : h;
+                if (currentFilter.opponent && opp !== currentFilter.opponent) return false;
+                if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
+                if (sOpp && !opp.includes(sOpp)) return false; if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; if (sRef && !(m.referee || "").includes(sRef)) return false;
+                if (year && !(m.date || "").startsWith(year)) return false; if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
+                if (loc && (loc === 'home' ? !isH : isH)) return false; if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
+            });
+            let tw=0, td=0, tl=0, tgf=0, tga=0; 
+            filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
+            summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
+            summary.style.display = 'block';
         } else header.style.display = "none";
+
         let filtered = rawData.filter(m => {
             const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = isH ? a : h;
             if (currentFilter.opponent && opp !== currentFilter.opponent) return false;
@@ -208,8 +210,6 @@
             if (year && !(m.date || "").startsWith(year)) return false; if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false; if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
         });
-        let tw=0, td=0, tl=0, tgf=0, tga=0; filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
-        if(header.style.display !== "none") summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
         let dData = [...filtered].sort((a,b) => { let vA = a[sortState.column], vB = b[sortState.column]; if(sortState.column === 'attendance') { vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; } return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); });
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
         document.getElementById('table-body').innerHTML = dData.map(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; }).join('');
@@ -243,10 +243,15 @@
         }; r('rank-match', 'match', '경기'); r('rank-goal', 'goal', '골'); r('rank-ap', 'ap', 'pt'); r('rank-cs', 'cs', '회');
     }
 
+    // [보정] 랭킹 조회 시 이전 경기 요약 정보 숨김 및 타이틀 통일
     function showAllRankings(col) {
         isTotalRankMode = true; sortState = { column: col, direction: 'desc' };
-        const h = document.getElementById('dynamic-header'), tEl = document.getElementById('dynamic-title');
-        if (h && tEl) { h.style.display = "flex"; const tM = { 'match': '통산 출전', 'goal': '통산 득점', 'ap': '통산 공격포인트', 'cs': '통산 클린시트' }; tEl.innerText = `🏆 ${tM[col] || '통산'} 전체 랭킹 조회`; }
+        const h = document.getElementById('dynamic-header'), tEl = document.getElementById('dynamic-title'), sum = document.getElementById('dynamic-summary');
+        if (h && tEl) { 
+            h.style.display = "flex"; 
+            tEl.innerText = `🏆 통산기록 랭킹 조회`; // 요청하신 명칭으로 통일
+            if(sum) sum.style.display = 'none'; // 경기 전적 요약 숨김
+        }
         renderAllRankingsTable();
     }
 
