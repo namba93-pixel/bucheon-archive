@@ -13,7 +13,7 @@
         .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 20px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
         .stats-dashboard span { margin: 0 8px; font-weight: 600; }
         .mode-switch { display: flex; justify-content: center; gap: 10px; margin-top: -25px; position: relative; z-index: 100; }
-        .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid var(--bfc-red); }
         .mode-btn.active { background: var(--bfc-red); color: white; }
         .container { max-width: 1300px; margin: 30px auto 50px; padding: 0 15px; flex: 1; position: relative; z-index: 10; }
         .ranking-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px; }
@@ -22,12 +22,10 @@
         .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
         .more-btn { background: none; border: none; color: #999; font-size: 0.75rem; cursor: pointer; float: right; margin-top: -35px; }
         
-        /* 필터 영역 미적 레이아웃 보정 */
         .filter-container { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end; }
         .filter-item { display: flex; flex-direction: column; gap: 8px; position: relative; }
         .filter-item label { font-size: 0.85rem; font-weight: bold; color: #666; }
         
-        /* 체크박스 정렬 보정 */
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; padding: 0 15px; background: #f9f9f9; border-radius: 10px; border: 1px solid #ddd; height: 45px; align-items: center; box-sizing: border-box; }
         .checkbox-group label { font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; line-height: 1; }
         .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; margin: 0; cursor: pointer; }
@@ -48,7 +46,6 @@
         .win { color: var(--bfc-red); font-weight: bold; }
         .highlight-red { color: var(--bfc-red); font-weight: bold; }
 
-        /* 팝업(모달) 디자인 이미지 반영 */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 550px; border-radius: 30px; padding: 40px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
         .modal-header { text-align: center; border-bottom: 3px solid var(--bfc-red); padding-bottom: 20px; margin-bottom: 30px; }
@@ -58,6 +55,7 @@
         .stat-card { background: #f8f9fa; border-radius: 15px; padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
         .stat-label { font-size: 0.85rem; color: #888; font-weight: 500; }
         .stat-value { font-size: 1.3rem; font-weight: 800; color: var(--bfc-red); }
+        .rate-small { font-size: 0.75rem; color: #666; font-weight: 400; margin-top: -4px; }
 
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; }
         @media (max-width: 1000px) { .ranking-container { grid-template-columns: repeat(2, 1fr); } }
@@ -105,7 +103,7 @@
         <div class="ranking-container">
             <div class="ranking-box"><h3>🏃‍♂️ 통산 출전 TOP 7</h3><button class="more-btn" onclick="showAllRankings('match')">more</button><div id="rank-match"></div></div>
             <div class="ranking-box"><h3>⚽ 통산 득점 TOP 7</h3><button class="more-btn" onclick="showAllRankings('goal')">more</button><div id="rank-goal"></div></div>
-            <div class="ranking-box"><h3>🔥 공격 포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
+            <div class="ranking-box"><h3>🔥 포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
             <div class="ranking-box"><h3>🧤 클린시트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('cs')">more</button><div id="rank-cs"></div></div>
         </div>
         <div class="filter-container" style="grid-template-columns: 1fr 1.2fr 2.8fr;">
@@ -295,7 +293,7 @@
 
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value, nameSearch = document.getElementById('p-search-name').value, selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
-        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">공격포인트 ↕</th><th>PK</th><th>클린시트</th><th>경고</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">포인트 ↕</th><th>PK</th><th>CS</th><th>경고</th></tr>`;
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!nameSearch || p.name.includes(nameSearch)) && selectedLeagues.includes(getUnifiedLeagueName(p.league)));
         const grouped = {};
         filtered.forEach(p => {
@@ -335,10 +333,37 @@
     function showPlayerTotal(name) {
         const pData = playerSeasonData.filter(p => p.name === name);
         const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] };
-        pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); });
+        pData.forEach(d => { 
+            tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; 
+            tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; 
+            tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; 
+            if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); 
+        });
         const apSum = tot.g + tot.a, seasonText = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0;
-        document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 부천 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${seasonText}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>${isGK ? `<div class="stat-card modal-item-full" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:25px;"><div class="stat-label">클린시트 / 통산 실점</div><div class="stat-value">${tot.cs}회 / ${tot.con}실점</div></div>` : ""}`;
-        document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex';
+        const concededRate = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00";
+
+        document.getElementById('modal-data').innerHTML = `
+            <div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div>
+            <div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${seasonText}</div></div>
+            <div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div>
+            <div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div>
+            <div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div>
+            <div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div>
+            <div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div>
+            <div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>
+            ${isGK ? `
+            <div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;">
+                <div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div>
+            </div>
+            <div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;">
+                <div class="stat-label">통산 실점</div>
+                <div class="stat-value">${tot.con}실점</div>
+                <div class="rate-small">(경기당 ${concededRate})</div>
+            </div>
+            ` : ""}
+        `;
+        document.getElementById('modal-data').className = "modal-grid"; 
+        document.getElementById('modal-overlay').style.display = 'flex';
     }
 
     function initFilters() {
@@ -370,4 +395,3 @@
 </script>
 </body>
 </html>
-
