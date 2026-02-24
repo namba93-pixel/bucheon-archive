@@ -99,7 +99,7 @@
             <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
             <div class="filter-item"><label>대회별 조회</label><select id="select-league" onchange="updateView()"><option value="">모든 대회</option></select></div>
         </div>
-        <div class="data-notice">📌 <strong>데이터 안내:</strong> K3리그 결과 중 관중 수가 누락된 경기와 코로나19로 인한 무관중 경기는 0으로 표기되어 있습니다. <br> (관중 순 정렬 시, 정확한 통계 조회를 위해 0명으로 기록된 데이터는 제외하고 표시됩니다.)</div>
+        <div class="data-notice">📌 <strong>데이터 안내:</strong> 결과 중 관중 수가 누락된 경기와 코로나19로 인한 무관중 경기는 0으로 표기되어 있습니다. <br> (관중 순 정렬 시, 정확한 통계 조회를 위해 0명으로 기록된 데이터는 제외하고 표시됩니다.)</div>
     </div>
 
     <div id="player-section" style="display: none;">
@@ -119,6 +119,7 @@
                         <label class="checkbox-item"><input type="checkbox" id="check-all" checked onclick="toggleAllLeagues(this)"> 전체 선택</label>
                         <label class="checkbox-item"><input type="checkbox" name="p-league" value="K리그1" checked onclick="handleSingleLeagueCheck()"> K리그1</label>
                         <label class="checkbox-item"><input type="checkbox" name="p-league" value="K리그2" checked onclick="handleSingleLeagueCheck()"> K리그2</label>
+                        <label class="checkbox-item"><input type="checkbox" name="p-league" value="K리그2" checked onclick="handleSingleLeagueCheck()"> 플레이오프</label>
                         <label class="checkbox-item"><input type="checkbox" name="p-league" value="코리아컵" checked onclick="handleSingleLeagueCheck()"> 코리아컵</label>
                     </div>
                 </div>
@@ -130,7 +131,7 @@
                     <div class="view-title">🏆 부천FC1995 역대 통산 기록 순위</div>
                     <button class="btn-reset" onclick="exitTotalRanking()">메인 화면으로 돌아가기</button>
                 </div>
-                <div class="view-summary">※ 항목 헤더를 누르면 정렬됩니다.</div>
+                <div class="view-summary">※ 통산 기록은 K리그1, K리그2, 코리아컵 기록이 모두 합산된 수치입니다. <br> 각 항목 헤더를 누르면 최다 기록순으로 조회가 가능합니다.</div>
             </div>
         </div>
         <div class="data-notice">📌 <strong>데이터 안내:</strong> 선수 기록은 2013년 프로 진출 이후 공식 경기 데이터만을 바탕으로 집계됩니다.</div>
@@ -195,6 +196,28 @@
             return o;
         });
     }
+
+    // 통산 성적을 전역 변수로 저장하거나 초기 로드 시 한 번만 실행
+function updateAllTimeStats() {
+    let w=0, d=0, l=0, gf=0, ga=0;
+    rawData.forEach(m => {
+        const isH = m.hometeam.includes("부천");
+        const bS = parseInt(m.homescored)||0, oS = parseInt(m.awayscored)||0;
+        const myS = isH ? bS : oS, opS = isH ? oS : bS;
+        gf += myS; ga += opS;
+        if (myS > opS) w++; else if (myS < opS) l++; else d++;
+    });
+    const rate = rawData.length ? (((w + d * 0.5) / rawData.length) * 100).toFixed(1) : 0;
+    
+    // 상단 대시보드 ID에 맞게 값 고정
+    document.getElementById('stat-total').innerText = rawData.length + "경기";
+    document.getElementById('stat-w').innerText = w + "승";
+    document.getElementById('stat-d').innerText = d + "무";
+    document.getElementById('stat-l').innerText = l + "패";
+    document.getElementById('stat-gf').innerText = gf + "득점";
+    document.getElementById('stat-ga').innerText = ga + "실점";
+    document.getElementById('stat-rate').innerText = rate + "%";
+}
 
     function getUnifiedTeamName(n) { const map = { "상주 상무": "상무", "김천 상무": "상무", "경찰 축구단": "경찰", "아산 무궁화": "경찰" }; return map[n] || n; }
     function getUnifiedLeagueName(n) { if(!n) return ""; if(n.includes("K리그1")) return "K리그1"; if(n.includes("K리그2") || n.includes("챌린지")) return "K리그2"; return "코리아컵"; }
@@ -392,4 +415,5 @@
 </script>
 </body>
 </html>
+
 
