@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>부천FC1995 공식경기 아카이브</title>
+    <title>부천FC1995 공식경기 통산기록 조회 사이트</title>
     <style>
+        /* v15.0의 스타일을 그대로 유지합니다 */
         :root { --bfc-red: #ed1c24; --bfc-black: #1a1a1a; --bg-gray: #f4f4f4; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg-gray); color: #333; display: flex; flex-direction: column; min-height: 100vh; }
         header { background: linear-gradient(135deg, var(--bfc-black) 60%, var(--bfc-red)); color: white; padding: 40px 20px 60px; text-align: center; border-bottom: 6px solid var(--bfc-red); position: relative; }
         .home-link { text-decoration: none; color: white; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
         header h1 { margin: 0; font-size: 1.8rem; font-weight: 900; }
-        .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 20px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
+        .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 10px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
         .stats-dashboard span { margin: 0 8px; font-weight: 600; }
         .mode-switch { display: flex; justify-content: center; gap: 10px; margin-top: -25px; position: relative; z-index: 100; }
         .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid var(--bfc-red); }
@@ -70,18 +71,21 @@
 <div class="container">
     <div id="team-section">
         <div class="filter-container">
-            <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
-            <div class="filter-item"><label>홈/원정경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
-            <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
-            <div class="filter-item"><label>대회별 조회</label><select id="select-league" onchange="updateView()"><option value="">모든 대회</option>
-                <option value="K리그1">K리그1</option>
-                <option value="K리그2">K리그2</option>
-                <option value="K3리그">K3리그</option>
-                <option value="플레이오프">플레이오프</option>
-                <option value="코리아컵">코리아컵</option>
-                <option value="챌린저스컵">챌린저스컵</option>
-    </select>
-</div>
+            <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
+            <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
+            <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
+            <div class="filter-item">
+                <label>대회별 조회</label>
+                <select id="select-league" onchange="updateView()">
+                    <option value="">모든 대회</option>
+                    <option value="K리그1">K리그1</option>
+                    <option value="K리그2">K리그2</option>
+                    <option value="K3리그">K3리그</option>
+                    <option value="플레이오프">플레이오프</option>
+                    <option value="코리아컵">코리아컵</option>
+                    <option value="챌린저스컵">챌린저스컵</option>
+                </select>
+            </div>
         </div>
         <div class="data-notice">📌 <strong>데이터 안내:</strong> K3리그 결과 중 관중 수가 누락된 경기와 코로나19로 인한 무관중 경기는 0으로 표기되어 있습니다. <br> (관중 순 정렬 시 0명 데이터는 제외됩니다.)</div>
     </div>
@@ -157,36 +161,32 @@
     }
 
     function parseCSV(text) {
-    const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
-    if (rows.length < 1) return [];
-    
-    // 헤더의 공백과 보이지 않는 특수문자까지 제거하여 매칭 확률을 극대화합니다.
-    const heads = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/[^\w]/gi, ''));
-    
-    return rows.slice(1).map(line => {
-        const vals = []; let start = 0, inQ = false;
-        for (let i = 0; i < line.length; i++) {
-            if (line[i] === '"') inQ = !inQ;
-            if (line[i] === ',' && !inQ) { vals.push(line.substring(start, i)); start = i + 1; }
-        }
-        vals.push(line.substring(start));
-        
-        let o = {};
-        heads.forEach((h, i) => {
-            // 데이터 알맹이 앞뒤의 불필요한 공백과 따옴표를 완전히 제거합니다.
-            let v = (vals[i] || "").trim().replace(/^"|"$/g, "").trim();
-            o[h] = v;
+        const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
+        if (rows.length < 1) return [];
+        const heads = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/[^\w]/gi, ''));
+        return rows.slice(1).map(line => {
+            const vals = []; let start = 0, inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === '"') inQ = !inQ;
+                if (line[i] === ',' && !inQ) { vals.push(line.substring(start, i)); start = i + 1; }
+            }
+            vals.push(line.substring(start));
+            let o = {};
+            heads.forEach((h, i) => o[h] = (vals[i] || "").trim().replace(/^"|"$/g, "").trim());
+            return o;
         });
-        return o;
-    });
-}
+    }
 
+    // [중요 수정] 대회명 통합 로직 (K3리그, 챌린저스컵, 플레이오프 범위 확대)
     function getUnifiedLeagueName(n) { 
         if(!n) return "";
-        if(n.includes("K리그1")) return "K리그1"; 
-        if(n.includes("K리그2") || n.includes("챌린지")) return "K리그2"; 
-        if(n.includes("FA컵") || n.includes("코리아컵")) return "코리아컵";
-        if(n.includes("플레이오프")) return "플레이오프";
+        const league = n.toLowerCase();
+        if(league.includes("k리그1") || league.includes("k-리그1")) return "K리그1"; 
+        if(league.includes("k리그2") || league.includes("챌린지")) return "K리그2"; 
+        if(league.includes("k3리그") || league.includes("챌린저스리그")) return "K3리그";
+        if(league.includes("챌린저스컵")) return "챌린저스컵";
+        if(league.includes("fa컵") || league.includes("코리아컵")) return "코리아컵";
+        if(league.includes("플레이오프") || league.includes("승강")) return "플레이오프";
         return n; 
     }
 
@@ -210,7 +210,7 @@
     function fixAllTimeStats() {
         let w=0, d=0, l=0, gf=0, ga=0;
         rawData.forEach(m => {
-            const isH = m.hometeam && m.hometeam.includes("부천");
+            const isH = (m.hometeam || "").includes("부천");
             const myS = isH ? parseInt(m.homescored)||0 : parseInt(m.awayscored)||0;
             const opS = isH ? parseInt(m.awayscored)||0 : parseInt(m.homescored)||0;
             gf += myS; ga += opS;
@@ -244,36 +244,38 @@
         const year = document.getElementById('select-year').value;
         const loc = document.getElementById('select-location').value;
         const mgr = document.getElementById('select-manager').value;
-        const selLg = document.getElementById('select-league').value; // 추가
+        const selLg = document.getElementById('select-league').value;
+
         const header = document.getElementById('dynamic-header');
         const summary = document.getElementById('dynamic-summary');
 
-        if (currentFilter.opponent || currentFilter.stadium || year || mgr) {
+        if (currentFilter.opponent || currentFilter.stadium || year || mgr || selLg) {
             header.style.display = "flex";
-            const title = currentFilter.opponent ? `${currentFilter.opponent}${getParticle(currentFilter.opponent)} 전적` : (currentFilter.stadium ? `${currentFilter.stadium}에서의 전적` : "필터링 결과");
-            document.getElementById('dynamic-title').innerText = title;
+            let titleParts = [];
+            if (currentFilter.stadium) titleParts.push(`${currentFilter.stadium}에서`);
+            if (currentFilter.opponent) titleParts.push(`${currentFilter.opponent}${getParticle(currentFilter.opponent)}`);
+            if (mgr) titleParts.push(`${mgr} 감독의`);
+            if (selLg) titleParts.push(`${selLg}`);
+            const seasonText = year ? `${year}시즌` : "통산";
+            document.getElementById('dynamic-title').innerText = `🔍 ${titleParts.join(" ")} ${seasonText} 경기결과`;
         } else { header.style.display = "none"; }
 
         let filtered = rawData.filter(m => {
-            const isH = m.hometeam && m.hometeam.includes("부천");
+            const isH = (m.hometeam || "").includes("부천");
             const opp = isH ? m.awayteam : m.hometeam;
             if (currentFilter.opponent && opp !== currentFilter.opponent) return false;
             if (currentFilter.stadium && m.stadium !== currentFilter.stadium) return false;
             if (year && !m.date.startsWith(year)) return false;
-            if (mgr && m.bfc_manager !== mgr) return false;
+            if (mgr && m.bfcmanager !== mgr && m.bfc_manager !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false;
-
-            // 대회 필터링 로직 추가
-            if (selLg) {
-                const uniLg = getUnifiedLeagueName(m.league);
-                if (uniLg !== selLg) return false;
-            }
+            // [대회 필터 수정]
+            if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false;
             return true;
         });
 
         let tw=0, td=0, tl=0, tgf=0, tga=0;
         filtered.forEach(m => {
-            const isH = m.hometeam && m.hometeam.includes("부천");
+            const isH = (m.hometeam || "").includes("부천");
             const myS = isH ? parseInt(m.homescored)||0 : parseInt(m.awayscored)||0;
             const opS = isH ? parseInt(m.awayscored)||0 : parseInt(m.homescored)||0;
             tgf += myS; tga += opS;
@@ -296,30 +298,15 @@
 
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
         document.getElementById('table-body').innerHTML = displayData.map(m => {
-        const isH = (m.hometeam || "").includes("부천");
-        // 데이터가 비어있을 경우 NaN 방지를 위한 기본값(0) 처리
-        const hS = parseInt(m.homescored) || 0;
-        const aS = parseInt(m.awayscored) || 0;
-        const attn = parseInt(String(m.attendance || "").replace(/,/g, '')) || 0;
-        
-        const myS = isH ? hS : aS, opS = isH ? aS : hS;
-        let res = "무";
-        if (myS > opS) res = "승"; else if (myS < opS) res = "패";
-        
-        const oppName = isH ? (m.awayteam || "미정") : (m.hometeam || "미정");
-        
-        return `<tr>
-            <td>${m.date || "-"}</td>
-            <td>${m.league || "-"}</td>
-            <td><b class="clickable" onclick="filterByOpponent('${oppName}')">${oppName}</b></td>
-            <td><span class="clickable" onclick="filterByStadium('${m.stadium || ""}')">${m.stadium || "-"}</span></td>
-            <td>${hS}:${aS}</td>
-            <td class="${res === '승' ? 'win' : ''}">${res}</td>
-            <td>${attn > 0 ? attn.toLocaleString() : "-"}</td>
-            <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
-        </tr>`;
-    }).join('');
-}
+            const isH = (m.hometeam || "").includes("부천");
+            const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+            const myS = isH ? hS : aS, opS = isH ? aS : hS;
+            let res = myS > opS ? "승" : (myS < opS ? "패" : "무");
+            const oppName = isH ? m.awayteam : m.hometeam;
+            const attn = parseInt(String(m.attendance).replace(/,/g,''))||0;
+            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${oppName}')">${oppName}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${attn > 0 ? attn.toLocaleString() : "-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
+        }).join('');
+    }
 
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value;
@@ -337,7 +324,7 @@
     }
 
     function renderAllRankingsTable() {
-        document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">통산도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">CS ↕</th><th>소속시즌</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">CS ↕</th><th>소속시즌</th></tr>`;
         const t = {};
         playerSeasonData.forEach(d => {
             if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] };
@@ -372,9 +359,8 @@
         const pySel = document.getElementById('p-select-year');
         pySel.innerHTML = '<option value="">전체 시즌</option>';
         pY.forEach(y => pySel.add(new Option(y + " 시즌", y)));
-        const mgrs = [...new Set(rawData.map(m => m.bfc_manager))].filter(Boolean).sort();
+        const mgrs = [...new Set(rawData.map(m => m.bfcmanager || m.bfc_manager))].filter(Boolean).sort();
         const mSel = document.getElementById('select-manager');
-        mSel.innerHTML = '<option value="">모든 감독</option>';
         mgrs.forEach(m => mSel.add(new Option(m, m)));
     }
 
@@ -384,6 +370,7 @@
     function filterByOpponent(name) { currentFilter.opponent = name; updateView(); }
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     function showAllRankings(col) { isTotalRankMode = true; sortState = { column: col, direction: 'desc' }; updateView(); }
+    function exitTotalRanking() { isTotalRankMode = false; updateView(); }
     function resetToAll() { currentFilter = { opponent: null, stadium: null }; isTotalRankMode = false; updateView(); }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
     function showPlayerTotal(name) {
@@ -399,5 +386,3 @@
 </script>
 </body>
 </html>
-
-
