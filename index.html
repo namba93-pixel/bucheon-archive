@@ -223,51 +223,83 @@
     }
 
     function renderTeamTable() {
-        const year = document.getElementById('select-year').value;
-        const loc = document.getElementById('select-location').value;
-        const mgr = document.getElementById('select-manager').value;
-        const lg = document.getElementById('select-league').value;
+    const year = document.getElementById('select-year').value;
+    const loc = document.getElementById('select-location').value;
+    const mgr = document.getElementById('select-manager').value;
+    const lg = document.getElementById('select-league').value;
 
-        if (currentFilter.opponent || currentFilter.stadium) {
-            document.getElementById('dynamic-header').style.display = "flex";
-            document.getElementById('dynamic-title').innerText = (currentFilter.opponent || currentFilter.stadium) + " 전적 조회";
-        } else { document.getElementById('dynamic-header').style.display = "none"; }
+    // --- 동적 타이틀 생성 로직 ---
+    if (currentFilter.opponent || currentFilter.stadium || mgr) {
+        document.getElementById('dynamic-header').style.display = "flex";
+        let titleParts = [];
 
-        let filtered = rawData.filter(m => {
-            const isH = m.hometeam.includes("부천");
-            const opp = isH ? m.awayteam : m.hometeam;
-            if (currentFilter.opponent && getUnifiedTeamName(opp) !== getUnifiedTeamName(currentFilter.opponent)) return false;
-            if (currentFilter.stadium && m.stadium !== currentFilter.stadium) return false;
-            if (year && !m.date.startsWith(year)) return false;
-            if (mgr && m.bfc_manager !== mgr) return false;
-            if (lg && getUnifiedLeagueName(m.league) !== lg) return false;
-            if (loc && (loc === 'home' ? !isH : isH)) return false;
-            return true;
-        });
+        // 1. 장소 (~에서)
+        if (currentFilter.stadium) {
+            titleParts.push(`${currentFilter.stadium}에서`);
+        }
 
-        filtered.sort((a,b) => {
-            let vA = a[sortState.column], vB = b[sortState.column];
-            if(sortState.column === 'attendance') { vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; }
-            return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
-        });
+        // 2. 상대팀 (~와의/과의)
+        if (currentFilter.opponent) {
+            const oppName = getUnifiedTeamName(currentFilter.opponent);
+            titleParts.push(`${oppName}${getParticle(oppName)}`);
+        }
 
-        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
-        
-        let w=0, d=0, l=0, gf=0, ga=0;
-        document.getElementById('table-body').innerHTML = filtered.map(m => {
-            const isH = m.hometeam.includes("부천");
-            const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-            const myS = isH ? hS : aS, opS = isH ? aS : hS;
-            gf += myS; ga += opS;
-            let res = myS > opS ? "승" : (myS < opS ? "패" : "무");
-            if (res === "승") w++; else if (res === "패") l++; else d++;
-            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfc_manager}</td></tr>`;
-        }).join('');
+        // 3. 감독 (xxx 감독의)
+        if (mgr) {
+            titleParts.push(`${mgr} 감독의`);
+        }
 
-        document.getElementById('stat-total').innerText = filtered.length + "경기";
-        document.getElementById('stat-w').innerText = w + "승"; document.getElementById('stat-d').innerText = d + "무"; document.getElementById('stat-l').innerText = l + "패";
-        document.getElementById('stat-gf').innerText = gf + "득점"; document.getElementById('stat-ga').innerText = ga + "실점";
-        document.getElementById('stat-rate').innerText = filtered.length ? (((w + d * 0.5) / filtered.length) * 100).toFixed(1) + "%" : "0%";
+        // 4. 시즌 정보 (2024시즌 / 통산)
+        const seasonText = year ? `${year}시즌` : "통산";
+
+        // 최종 문구 조립: "부천종합에서 전남과의 이영민 감독의 통산 경기결과"
+        document.getElementById('dynamic-title').innerText = `🔍 ${titleParts.join(" ")} ${seasonText} 경기결과`;
+    } else {
+        document.getElementById('dynamic-header').style.display = "none";
+    }
+
+    // --- 데이터 필터링 및 출력 (v13.7 로직 유지) ---
+    let filtered = rawData.filter(m => {
+        const isH = m.hometeam.includes("부천");
+        const opp = isH ? m.awayteam : m.hometeam;
+        if (currentFilter.opponent && getUnifiedTeamName(opp) !== getUnifiedTeamName(currentFilter.opponent)) return false;
+        if (currentFilter.stadium && m.stadium !== currentFilter.stadium) return false;
+        if (year && !m.date.startsWith(year)) return false;
+        if (mgr && m.bfc_manager !== mgr) return false;
+        if (lg && getUnifiedLeagueName(m.league) !== lg) return false;
+        if (loc && (loc === 'home' ? !isH : isH)) return false;
+        return true;
+    });
+
+    // 정렬 로직 (기존 v13.7 코드 그대로 사용)
+    filtered.sort((a,b) => {
+        let vA = a[sortState.column], vB = b[sortState.column];
+        if(sortState.column === 'attendance') { vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; }
+        return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
+    });
+
+    document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
+    
+    let w=0, d=0, l=0, gf=0, ga=0;
+    document.getElementById('table-body').innerHTML = filtered.map(m => {
+        const isH = m.hometeam.includes("부천");
+        const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+        const myS = isH ? hS : aS, opS = isH ? aS : hS;
+        gf += myS; ga += opS;
+        let res = myS > opS ? "승" : (myS < opS ? "패" : "무");
+        if (res === "승") w++; else if (res === "패") l++; else d++;
+        const displayOpp = isH ? m.awayteam : m.hometeam;
+        return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpp}')">${displayOpp}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfc_manager}</td></tr>`;
+    }).join('');
+
+    // 상단 대시보드 업데이트
+    document.getElementById('stat-total').innerText = filtered.length + "경기";
+    document.getElementById('stat-w').innerText = w + "승"; 
+    document.getElementById('stat-d').innerText = d + "무"; 
+    document.getElementById('stat-l').innerText = l + "패";
+    document.getElementById('stat-gf').innerText = gf + "득점"; 
+    document.getElementById('stat-ga').innerText = ga + "실점";
+    document.getElementById('stat-rate').innerText = filtered.length ? (((w + d * 0.5) / filtered.length) * 100).toFixed(1) + "%" : "0%";
     }
 
     function renderPlayerTable() {
@@ -338,6 +370,13 @@
         lgs.forEach(l => lSel.add(new Option(l, l)));
     }
 
+    function getParticle(name) {
+    if (!name) return "";
+    const charCode = name.charCodeAt(name.length - 1);
+    const hasBatchim = (charCode - 0xAC00) % 28 > 0;
+    return hasBatchim ? "과의" : "와의";
+    }
+
     function toggleAllLeagues(master) { document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = master.checked); updateView(); calculateTotalRankings(); }
     function handleSingleLeagueCheck() { const all = document.querySelectorAll('input[name="p-league"]'); const checked = document.querySelectorAll('input[name="p-league"]:checked'); document.getElementById('check-all').checked = (all.length === checked.length); updateView(); calculateTotalRankings(); }
     function filterByOpponent(name) { historyStack.push({...currentFilter}); currentFilter.opponent = getUnifiedTeamName(name); updateView(); }
@@ -353,3 +392,4 @@
 </script>
 </body>
 </html>
+
