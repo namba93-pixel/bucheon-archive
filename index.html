@@ -105,7 +105,7 @@
         <div class="ranking-container">
             <div class="ranking-box"><h3>🏃‍♂️ 통산 출전 TOP 7</h3><button class="more-btn" onclick="showAllRankings('match')">more</button><div id="rank-match"></div></div>
             <div class="ranking-box"><h3>⚽ 통산 득점 TOP 7</h3><button class="more-btn" onclick="showAllRankings('goal')">more</button><div id="rank-goal"></div></div>
-            <div class="ranking-box"><h3>🔥 포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
+            <div class="ranking-box"><h3>🔥 공격 포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
             <div class="ranking-box"><h3>🧤 클린시트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('cs')">more</button><div id="rank-cs"></div></div>
         </div>
         <div class="filter-container" style="grid-template-columns: 1fr 1.2fr 2.8fr;">
@@ -295,7 +295,7 @@
 
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value, nameSearch = document.getElementById('p-search-name').value, selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
-        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">포인트 ↕</th><th>PK</th><th>CS</th><th>경고</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">공격포인트 ↕</th><th>PK</th><th>클린시트</th><th>경고</th></tr>`;
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!nameSearch || p.name.includes(nameSearch)) && selectedLeagues.includes(getUnifiedLeagueName(p.league)));
         const grouped = {};
         filtered.forEach(p => {
@@ -370,3 +370,4 @@
 </script>
 </body>
 </html>
+
