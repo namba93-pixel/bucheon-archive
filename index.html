@@ -87,6 +87,20 @@
                 </select>
             </div>
         </div>
+        <div class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(3, 1fr);">
+    <div class="filter-item">
+        <label>상대팀 검색</label>
+        <input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="updateView()">
+    </div>
+    <div class="filter-item">
+        <label>상대감독 검색</label>
+        <input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="updateView()">
+    </div>
+    <div class="filter-item">
+        <label>주심 검색</label>
+        <input type="text" id="search-referee" placeholder="주심 성함 입력" onkeyup="updateView()">
+    </div>
+</div>
         <div class="data-notice">📌 <strong>데이터 안내:</strong> K3리그 결과 중 관중 수가 누락된 경기와 코로나19로 인한 무관중 경기는 0으로 표기되어 있습니다. <br> (관중 순 정렬 시 0명 데이터는 제외됩니다.)</div>
     </div>
 
@@ -259,6 +273,11 @@
         const mgr = document.getElementById('select-manager').value;
         const selLg = document.getElementById('select-league').value;
 
+        // [추가] 새 검색 필드 값 읽기
+        const searchOpp = document.getElementById('search-opponent').value.trim();
+        const searchOppMgr = document.getElementById('search-opp-manager').value.trim();
+        const searchRef = document.getElementById('search-referee').value.trim();
+
         const header = document.getElementById('dynamic-header');
         const summary = document.getElementById('dynamic-summary');
 
@@ -282,6 +301,12 @@
             if (mgr && m.bfcmanager !== mgr && m.bfc_manager !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false;
             if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false;
+
+            // 2. [신규] 상대팀, 상대감독, 주심 텍스트 검색 (숨겨진 데이터 매칭)
+            if (searchOpp && !oppName.includes(searchOpp)) return false;
+            if (searchOppMgr && !(m.opp_manager || "").includes(searchOppMgr)) return false;
+            if (searchRef && !(m.referee || "").includes(searchRef)) return false;
+            
             return true;
         });
 
@@ -509,6 +534,7 @@
 </script>
 </body>
 </html>
+
 
 
 
