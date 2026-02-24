@@ -180,6 +180,31 @@
         } catch (e) { alert("데이터 로드 실패"); }
     }
 
+    // 통산 성적을 최초 1회만 계산하고 상단 바에 고정하는 함수
+    function fixAllTimeStats() {
+    let w=0, d=0, l=0, gf=0, ga=0;
+    rawData.forEach(m => {
+        const isH = m.hometeam.includes("부천");
+        const hS = parseInt(m.homescored) || 0;
+        const aS = parseInt(m.awayscored) || 0;
+        const myS = isH ? hS : aS;
+        const opS = isH ? aS : hS;
+        gf += myS; ga += opS;
+        if (myS > opS) w++; else if (myS < opS) l++; else d++;
+    });
+    const total = rawData.length;
+    const rate = total ? (((w + d * 0.5) / total) * 100).toFixed(1) : 0;
+
+    // 상단 대시보드 값 고정 (이후 어떤 필터를 써도 이 값은 변하지 않음)
+    document.getElementById('stat-total').innerText = total + "경기";
+    document.getElementById('stat-w').innerText = w + "승";
+    document.getElementById('stat-d').innerText = d + "무";
+    document.getElementById('stat-l').innerText = l + "패";
+    document.getElementById('stat-gf').innerText = gf + "득점";
+    document.getElementById('stat-ga').innerText = ga + "실점";
+    document.getElementById('stat-rate').innerText = rate + "%";
+    }
+
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
         if (rows.length < 1) return [];
@@ -197,28 +222,6 @@
             return o;
         });
     }
-
-    // 통산 성적을 전역 변수로 저장하거나 초기 로드 시 한 번만 실행
-function updateAllTimeStats() {
-    let w=0, d=0, l=0, gf=0, ga=0;
-    rawData.forEach(m => {
-        const isH = m.hometeam.includes("부천");
-        const bS = parseInt(m.homescored)||0, oS = parseInt(m.awayscored)||0;
-        const myS = isH ? bS : oS, opS = isH ? oS : bS;
-        gf += myS; ga += opS;
-        if (myS > opS) w++; else if (myS < opS) l++; else d++;
-    });
-    const rate = rawData.length ? (((w + d * 0.5) / rawData.length) * 100).toFixed(1) : 0;
-    
-    // 상단 대시보드 ID에 맞게 값 고정
-    document.getElementById('stat-total').innerText = rawData.length + "경기";
-    document.getElementById('stat-w').innerText = w + "승";
-    document.getElementById('stat-d').innerText = d + "무";
-    document.getElementById('stat-l').innerText = l + "패";
-    document.getElementById('stat-gf').innerText = gf + "득점";
-    document.getElementById('stat-ga').innerText = ga + "실점";
-    document.getElementById('stat-rate').innerText = rate + "%";
-}
 
     function getUnifiedTeamName(name) {
         if (!name) return "";
@@ -442,3 +445,4 @@ function updateAllTimeStats() {
 
 
  
+
