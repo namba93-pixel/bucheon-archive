@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>부천FC1995 공식경기 아카이브</title>
+    <style>
+        :root { --bfc-red: #ed1c24; --bfc-black: #1a1a1a; --bg-gray: #f4f4f4; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg-gray); color: #333; }
+        header { background: linear-gradient(135deg, var(--bfc-black) 60%, var(--bfc-red)); color: white; padding: 40px 20px; text-align: center; border-bottom: 6px solid var(--bfc-red); }
+        .mode-switch { display: flex; justify-content: center; gap: 10px; margin-top: -25px; position: relative; z-index: 100; }
+        .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mode-btn.active { background: var(--bfc-red); color: white; }
+        .container { max-width: 1250px; margin: 40px auto; padding: 0 15px; }
+        .results-box { background: white; border-radius: 15px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { background: #f8f9fa; padding: 15px; font-size: 0.8rem; color: #555; text-align: center; border-bottom: 2px solid #eee; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
+        .win { color: var(--bfc-red); font-weight: bold; }
+        .loading { text-align: center; padding: 100px; font-weight: bold; color: var(--bfc-red); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>부천FC1995 공식경기 아카이브</h1>
+    <div id="stat-bar" style="margin-top:10px; font-size:0.9rem; opacity:0.8;">데이터 로딩 중...</div>
+</header>
+
+<div class="mode-switch">
+    <button id="btn-team" class="mode-btn active" onclick="switchMode('team')">🏟️ 팀 경기 기록</button>
+    <button id="btn-player" class="mode-btn" onclick="switchMode('player')">🏃‍♂️ 선수 개인 기록</button>
+</div>
+
+<div class="container">
+    <div id="loader" class="loading">🔴 데이터를 실시간으로 동기화 중입니다...</div>
+    <div id="main-content" style="display:none;">
+        <div class="results-box">
+            <table>
+                <thead id="t-head"></thead>
+                <tbody id="t-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 성현님의 구글 시트 주소 (v7.4 방식 유지)
+    const TEAM_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTLnO6CTQkcgJTDHr0MNJAA5xUCCWSqWSq-fgvJkEIGRrOBH1D9EXNXJLxIAriWiQ1oMrSKxTq6Y8m/pub?gid=0&single=true&output=csv";
+    const PLAYER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTLnO6CTQkcgJTDHr0MNJAA5xUCCWSqWSq-fgvJkEIGRrOBH1D9EXNXJLxIAriWiQ1oMrSKxTq6Y8m/pub?gid=1150204300&single=true&output=csv";
+
+    let tData = [], pData = [], currentMode = 'team';
+
+    async function init() {
+        try {
+            const [tRes, pRes] = await Promise.all([
+                fetch(TEAM_URL + "&cb=" + Date.now()),
+                fetch(PLAYER_URL + "&cb=" + Date.now())
+            ]);
+            tData = await parseCSV(await tRes.text());
+            pData = await parseCSV(await pRes.text());
+            
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            render();
+        } catch (e) {
+            document.getElementById('loader').innerHTML = "❌ 연결 실패. 시트 설정을 확인해주세요.";
+        }
+    }
+
+    function parseCSV(text) {
+        const rows = text.split(/\r?\n/).filter(line => line.trim());
+        if (rows.length < 1) return [];
+        const heads = rows[0].split(',').map(h => h.replace(/[^\w]/gi, '').toLowerCase().trim());
+        return rows.slice(1).map(row => {
+            const vals = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(',');
+            let o = {};
+            heads.forEach((h, i) => { if(h) o[h] = (vals[i] || "").replace(/"/g, "").trim(); });
+            return o;
+        });
+    }
+
+    function switchMode(m) {
+        currentMode = m;
+        document.getElementById('btn-team').classList.toggle('active', m === 'team');
+        document.getElementById('btn-player').classList.toggle('active', m === 'player');
+        render();
+    }
+
+    function render() {
+        const thead = document.getElementById('t-head');
+        const tbody = document.getElementById('t-body');
+        const statBar = document.getElementById('stat-bar');
+
+        if (currentMode === 'team') {
+            thead.innerHTML = '<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>';
+            tbody.innerHTML = tData.map(m => {
+                const isH = m.hometeam && m.hometeam.includes("부천");
+                const hS = parseInt(m.homescored) || 0;
+                const aS = parseInt(m.awayscored) || 0;
+                const res = (isH ? hS > aS : aS > hS) ? "승" : (hS === aS ? "무" : "패");
+                return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH ? m.awayteam : m.hometeam}</td><td>${m.stadium}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${Number(m.attendance||0).toLocaleString()}</td><td>${m.bfcmanager || m.bfc_manager || '-'}</td></tr>`;
+            }).join('');
+            statBar.innerText = `부천FC1995 팀 기록 조회 중`;
+        } else {
+            // [최종] 성현님의 메모장 구조(pk, conceded, cleansheet) 반영
+            thead.innerHTML = '<tr><th>이름</th><th>시즌</th><th>대회</th><th>경기</th><th>득점</th><th>도움</th><th>PK</th><th>경고</th><th>퇴장</th><th>실점</th><th>CS</th></tr>';
+            tbody.innerHTML = pData.map(p => `
+                <tr>
+                    <td><b>${p.name || '-'}</b></td><td>${p.season || '-'}</td><td>${p.league || '-'}</td>
+                    <td>${p.match || '0'}</td><td>${p.goal || '0'}</td><td>${p.assist || '0'}</td>
+                    <td>${p.pk || '0'}</td><td>${p.yc || '0'}</td><td>${p.rc || '0'}</td>
+                    <td>${p.conceded || '0'}</td><td>${p.cleansheet || '0'}</td>
+                </tr>`).join('');
+            statBar.innerText = `총 ${pData.length}명의 선수 기록이 조회되었습니다.`;
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>
