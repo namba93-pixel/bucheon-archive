@@ -294,16 +294,22 @@
 
         let filtered = rawData.filter(m => {
             const isH = (m.hometeam || "").includes("부천");
-            const opp = isH ? m.awayteam : m.hometeam;
-            if (currentFilter.opponent && opp !== currentFilter.opponent) return false;
+            cconst opponentName = isH ? (m.awayteam || "") : (m.hometeam || "");
+        
+            // 1. 기존 클릭 필터 (전적 조회용)
+            if (currentFilter.opponent && opponentName !== currentFilter.opponent) return false;
             if (currentFilter.stadium && m.stadium !== currentFilter.stadium) return false;
+            // 기타 필터 (시즌, 감독, 장소, 대회 등)
             if (year && !m.date.startsWith(year)) return false;
             if (mgr && m.bfcmanager !== mgr && m.bfc_manager !== mgr) return false;
             if (loc && (loc === 'home' ? !isH : isH)) return false;
             if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false;
 
-            // 2. [신규] 상대팀, 상대감독, 주심 텍스트 검색 (숨겨진 데이터 매칭)
-            if (searchOpp && !oppName.includes(searchOpp)) return false;
+            // 2. 검색창 필터 (성현님 요청 사항)
+            // 상대팀 검색: 입력값이 있을 때만 비교하며, 대소문자 구분 없이 포함 여부 확인
+            if (searchOpp && !opponentName.toLowerCase().includes(searchOpp.toLowerCase())) return false;
+        
+            // 상대감독 및 주심 검색 (v16.0 로직 유지)
             if (searchOppMgr && !(m.opp_manager || "").includes(searchOppMgr)) return false;
             if (searchRef && !(m.referee || "").includes(searchRef)) return false;
             
@@ -534,6 +540,7 @@
 </script>
 </body>
 </html>
+
 
 
 
