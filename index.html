@@ -219,8 +219,30 @@ function updateAllTimeStats() {
     document.getElementById('stat-rate').innerText = rate + "%";
 }
 
-    function getUnifiedTeamName(n) { const map = { "상주 상무": "상무", "김천 상무": "상무", "경찰 축구단": "경찰", "아산 무궁화": "경찰" }; return map[n] || n; }
-    function getUnifiedLeagueName(n) { if(!n) return ""; if(n.includes("K리그1")) return "K리그1"; if(n.includes("K리그2") || n.includes("챌린지")) return "K리그2"; return "코리아컵"; }
+    function getUnifiedTeamName(name) {
+        if (!name) return "";
+        const map = {
+            "상주 상무": "상무 축구단", "상주상무": "상무 축구단", "김천 상무": "상무 축구단", "김천상무": "상무 축구단", "광주 상무": "상무 축구단", "광주상무": "상무 축구단",
+            "아산 유나이티드": "아산 시민축구단", "아산 시민축구단": "아산 시민축구단", "충남 아산": "충남 아산 FC", "충남아산": "충남 아산 FC",
+            "천안시청": "천안시티FC", "천안시티FC": "천안시티FC",
+            "화성 신우전자": "신우전자 축구단", "삼척 신우전자": "신우전자 축구단",
+            "고양 Hi FC": "고양 자이크로", "고양 자이크로": "고양 자이크로",
+            "경찰 축구단": "경찰 축구단", "안산 무궁화": "경찰 축구단", "아산 무궁화": "경찰 축구단",
+            "대전 시티즌": "대전 하나시티즌", "대전 하나시티즌": "대전 하나시티즌",
+            "제주 SK": "SK 축구단", "제주 유나이티드": "SK 축구단", 
+        };
+        return map[name] || name;
+    }
+    function getUnifiedLeagueName(name) {
+        if (!name) return "";
+        if (name.includes("K리그1")) return "K리그1";
+        if (name.includes("K리그2") || name.includes("K리그 챌린지")) return "K리그2";
+        if (name.includes("코리아컵") || name.includes("FA컵")) return "코리아컵";
+        if (name.includes("플레이오프")) return "플레이오프";
+        if (name.includes("K3리그") || name.includes("챌린저스리그")) return "K3리그";
+        if (name.includes("챌린저스컵")) return "챌린저스컵";
+        return name;
+    }
 
     function switchMode(m) {
         currentMode = m; isTotalRankMode = false;
@@ -415,5 +437,6 @@ function updateAllTimeStats() {
 </script>
 </body>
 </html>
+
 
 
