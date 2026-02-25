@@ -124,8 +124,8 @@
         <div class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 성함 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정팬 조회</button></div>
+            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
+            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
         </div>
 
         <div class="data-notice">
@@ -276,26 +276,18 @@
         document.getElementById('team-section').style.display = 'block';
         document.getElementById('player-section').style.display = 'none';
         document.getElementById('mode-h').className = 'mode-btn history-btn active';
-        document.getElementById('mode-t').className = 'mode-btn';
-        document.getElementById('mode-p').className = 'mode-btn';
         updateView();
     }
 
-    // [중요 수정] 어느 페이지에서 누르던 팀 결과 레이아웃으로 강제 전환
     function showAwayFanSection() {
         resetToAll(); 
         currentFilter.type = 'away_fan'; 
-        
-        // 레이아웃 스위칭 (팀 섹션 강제 노출)
         document.getElementById('team-section').style.display = 'block';
         document.getElementById('player-section').style.display = 'none';
-        
-        // 버튼 상태 동기화
         const btn = document.getElementById('btn-away-fan');
         if(btn) btn.className = 'away-btn active';
-        document.getElementById('mode-t').className = 'mode-btn'; // 팀 탭 색상 해제
-        document.getElementById('mode-p').className = 'mode-btn'; // 선수 탭 색상 해제
-        
+        document.getElementById('mode-t').className = 'mode-btn';
+        document.getElementById('mode-p').className = 'mode-btn';
         sortState = { column: 'awayfan', direction: 'desc' };
         updateView();
     }
@@ -383,10 +375,19 @@
         }).join('');
     }
 
+    // [핵심 수정] 선수 기록 조회 시 팀 전적 요약(summary)을 숨기는 로직 추가
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value, selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
-        const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), panel = document.getElementById('player-ranking-panel');
-        if (year || selectedPlayerSearchName) { header.style.display = "flex"; panel.style.display = "none"; titleEl.innerText = `🔍 선수 기록 조회 결과`; } else { header.style.display = "none"; panel.style.display = "block"; }
+        const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary'), panel = document.getElementById('player-ranking-panel');
+        
+        if (year || selectedPlayerSearchName) { 
+            header.style.display = "flex"; panel.style.display = "none"; 
+            titleEl.innerText = `🔍 선수 기록 조회 결과`; 
+            summary.style.display = "none"; // [수정] 팀 전적 요약 문구 숨김
+        } else { 
+            header.style.display = "none"; panel.style.display = "block"; 
+        }
+
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSortOnlyDesc('match')">경기 ↕</th><th onclick="toggleSortOnlyDesc('goal')">득점 ↕</th><th onclick="toggleSortOnlyDesc('assist')">도움 ↕</th><th onclick="toggleSortOnlyDesc('ap')">포인트 ↕</th><th onclick="toggleSortOnlyDesc('pk')">PK ↕</th><th onclick="toggleSortOnlyDesc('cs')">클린시트 ↕</th><th onclick="toggleSortOnlyDesc('yc')">경고 ↕</th><th onclick="toggleSortOnlyDesc('rc')">퇴장 ↕</th></tr>`;
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!selectedPlayerSearchName || p.name === selectedPlayerSearchName) && selectedLeagues.includes(getUnifiedLeagueName(p.league)));
         const grouped = {};
@@ -407,11 +408,11 @@
 
     function calculateTotalRankings() {
         const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0 }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; });
-        const r = (id, k, u) => { const s = Object.values(t).sort((a,b) => b[k] !== a[k] ? b[k] - a[k] : a.match - b.match).slice(0, 7); const el = document.getElementById(id); if(el) el.innerHTML = s.map((p,i) => `<div class="rank-item"><span>${i+1}. ${p.name}</span><b>${p[k]}${u}</b></div>`).join(''); };
+        const r = (id, k, u) => { const s = Object.values(t).sort((a,b) => b[k] !== a[k] ? b[k] - a[k] : a.match - b.match).slice(0, 7); document.getElementById(id).innerHTML = s.map((p,i) => `<div class="rank-item"><span>${i+1}. ${p.name}</span><b>${p[k]}${u}</b></div>`).join(''); };
         r('rank-match', 'match', '경기'); r('rank-goal', 'goal', '골'); r('rank-ap', 'ap', 'pt'); r('rank-cs', 'cs', '회');
     }
 
-    function showAllRankings(col) { isTotalRankMode = true; sortState = { column: col, direction: 'desc' }; const h = document.getElementById('dynamic-header'), panel = document.getElementById('player-ranking-panel'); if (h) { h.style.display = "flex"; document.getElementById('dynamic-title').innerText = `🏆 통산기록 랭킹 조회`; if(panel) panel.style.display = "none"; } renderAllRankingsTable(); }
+    function showAllRankings(col) { isTotalRankMode = true; sortState = { column: col, direction: 'desc' }; const h = document.getElementById('dynamic-header'), panel = document.getElementById('player-ranking-panel'), summary = document.getElementById('dynamic-summary'); if (h) { h.style.display = "flex"; document.getElementById('dynamic-title').innerText = `🏆 통산기록 랭킹 조회`; if(summary) summary.style.display = "none"; if(panel) panel.style.display = "none"; } renderAllRankingsTable(); }
     function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
     function toggleSortTotal(col) { sortState.column = col; renderAllRankingsTable(); }
     function showPlayerTotal(name) { const pData = playerSeasonData.filter(p => p.name === name); const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); }); document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${formatSeasons(tot.seasons)}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${tot.g+tot.a}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>` + (tot.con>0||tot.cs>0?`<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${(tot.con/tot.m).toFixed(2)})</div></div>`:""); document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex'; }
@@ -448,7 +449,7 @@
         document.getElementById('mode-t').className = currentMode === 'team' ? 'mode-btn active' : 'mode-btn';
         document.getElementById('mode-p').className = currentMode === 'player' ? 'mode-btn active' : 'mode-btn';
         document.getElementById('mode-h').className = 'mode-btn history-btn';
-        const awayBtn = document.getElementById('btn-away-fan'); if(awayBtn) awayBtn.className = 'away-btn';
+        if(document.getElementById('btn-away-fan')) document.getElementById('btn-away-fan').className = 'away-btn';
         const pP = document.getElementById('player-ranking-panel'); if(pP) pP.style.display = currentMode === 'player' ? "block" : "none";
         updateView(); 
     }
