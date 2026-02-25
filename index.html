@@ -355,6 +355,8 @@
                 else if (bfcMgr && league) titleStr = `${bfcMgr} 감독의 ${league} 경기 결과`;
                 else if (bfcMgr) titleStr = `${bfcMgr} 감독의 경기 결과`;
                 else if (league) titleStr = `역대 ${league} 경기 결과`;
+                else if (loc === 'home') titleStr = "역대 홈 경기 결과";
+                else if (loc === 'away') titleStr = "역대 원정 경기 결과";
                 else titleStr = "조회 결과";
                 titleEl.innerText = `🔍 ${titleStr}${year ? ` (${year}시즌)` : ""}`;
             } else header.style.display = "none";
@@ -548,6 +550,7 @@
 </script>
 </body>
 </html>
+
 
 
 
