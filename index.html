@@ -75,7 +75,6 @@
         .data-notice { margin: 15px 0 25px; padding: 15px 20px; background: #fff; border-radius: 15px; border-left: 5px solid var(--bfc-red); font-size: 0.85rem; color: #666; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; line-height: 1.8; }
 
-        /* [모바일 대응 미디어 쿼리] - 기능은 그대로, 스타일만 변환 */
         @media (max-width: 768px) {
             header h1 { font-size: 1.4rem; }
             .mode-switch { padding: 0 10px; }
@@ -83,7 +82,6 @@
             .ranking-container { grid-template-columns: repeat(2, 1fr); }
             .filter-container { grid-template-columns: 1fr !important; padding: 15px; }
             .checkbox-group { height: auto; padding: 10px; }
-            .modal-content { width: 90%; padding: 20px; }
         }
     </style>
 </head>
@@ -113,7 +111,7 @@
 
 <div class="container">
     <div id="team-section">
-        <div class="filter-container">
+        <div id="team-filter-1" class="filter-container">
             <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
             <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
@@ -130,13 +128,13 @@
                 </select>
             </div>
         </div>
-        <div class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
+        <div id="team-filter-2" class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
         </div>
-        <div class="data-notice">
+        <div id="team-notice" class="data-notice">
             <b>💡 데이터 안내</b><br>
             • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회 데이터를 기준으로 제공합니다. <br>
             • 현재 대한축구협회에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부 누락되어 있습니다.
@@ -169,7 +167,7 @@
         <div class="data-notice">
             <b>💡 데이터 안내</b><br>
             • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다.<br>
-            • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다. <br>
+            • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다.<br>
             • 선수 이름을 클릭하시면, 선수 개인의 부천 통산 기록을 볼 수 있습니다.
         </div>
     </div>
@@ -177,7 +175,7 @@
     <div id="dynamic-header" class="view-header">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div id="dynamic-title" style="font-weight:bold; font-size:1.1rem; word-break:keep-all;"></div>
-            <button class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem; flex:none;" onclick="resetToAll()">이전 결과로 돌아가기</button>
+            <button id="btn-back" class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem; flex:none;" onclick="resetToAll()">이전 결과로 돌아가기</button>
         </div>
         <div id="dynamic-summary" class="view-summary"></div>
     </div>
@@ -286,13 +284,24 @@
         updateView();
     }
 
+    // [핵심] 원정팬 조회 시 모든 검색 필터를 숨기는 로직 적용
     function showAwayFanSection() {
-        resetToAll(); currentFilter.type = 'away_fan'; 
-        document.getElementById('team-section').style.display = 'block';
+        resetToAll(); 
+        currentFilter.type = 'away_fan'; 
+        
+        // 1. 모든 팀 필터 영역 숨김
+        document.getElementById('team-filter-1').style.display = 'none';
+        document.getElementById('team-filter-2').style.display = 'none';
+        document.getElementById('team-notice').style.display = 'none';
+        
+        // 2. 선수 섹션 숨김
         document.getElementById('player-section').style.display = 'none';
+        
+        // 3. 버튼 상태 동기화
         const btn = document.getElementById('btn-away-fan'); if(btn) btn.className = 'away-btn active';
         document.getElementById('mode-t').className = 'mode-btn';
         document.getElementById('mode-p').className = 'mode-btn';
+        
         sortState = { column: 'awayfan', direction: 'desc' };
         updateView();
     }
@@ -441,6 +450,12 @@
         ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
         if(document.getElementById('check-all')) document.getElementById('check-all').checked = true;
         document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = true);
+        
+        // 필터 및 안내 복구
+        document.getElementById('team-filter-1').style.display = 'grid';
+        document.getElementById('team-filter-2').style.display = 'grid';
+        document.getElementById('team-notice').style.display = 'block';
+        
         document.getElementById('dynamic-header').style.display='none'; 
         document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
         document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
@@ -458,4 +473,3 @@
 </script>
 </body>
 </html>
-
