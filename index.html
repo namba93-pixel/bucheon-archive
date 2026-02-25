@@ -294,7 +294,7 @@
                 return isAway && parseInt(m.date.substring(0,4)) >= 2023;
             });
         }
-        // 3. 일반 조회 모드 (동적 타이틀 복원 핵심 로직)
+        // 3. 일반 조회 모드 (확장된 모든 경우의 수 로직)
         else {
             const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef;
             if (hasFilter) {
@@ -303,12 +303,23 @@
                 const stadium = currentFilter.stadium;
                 const league = selLg;
                 const manager = mgr;
+                const oppManager = sOppMgr;
                 const referee = sRef;
 
                 let titleStr = "";
 
+                // 경우의 수 판단 로직
                 if (referee) {
                     titleStr = `${referee} 주심이 진행한 경기 결과`;
+                } else if (manager && oppManager) {
+                    // [추가] 지략 대결: 부천 감독 vs 상대 감독
+                    titleStr = `${oppManager} 감독과 ${manager} 감독의 맞대결 결과`;
+                } else if (oppManager && tOpp) {
+                    // [추가] 특정 팀의 특정 감독 상대
+                    titleStr = `${tOpp}의 ${oppManager} 감독을 상대로 한 경기 결과`;
+                } else if (oppManager) {
+                    // [추가] 상대 감독 단독 검색
+                    titleStr = `${oppManager} 감독과의 경기 결과`;
                 } else if (stadium && tOpp && manager) {
                     titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp)} ${manager} 감독의 경기 결과`;
                 } else if (stadium && tOpp) {
@@ -321,6 +332,8 @@
                     titleStr = `${manager} 감독의 ${league} 경기 결과`;
                 } else if (manager) {
                     titleStr = `${manager} 감독의 경기 결과`;
+                } else if (league) {
+                    titleStr = `역대 ${league} 경기 결과`;
                 } else {
                     titleStr = "조회 결과";
                 }
@@ -344,6 +357,37 @@
                 if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
             });
         }
+
+        let tw=0, td=0, tl=0, tgf=0, tga=0; 
+        filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
+        
+        if(header.style.display !== "none") {
+            if (currentFilter.type === 'away_fan') {
+                summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
+            } else {
+                summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
+            }
+            summary.style.display = 'block';
+        }
+
+        let dData = [...filtered].sort((a,b) => {
+            let vA = a[sortState.column], vB = b[sortState.column];
+            if(sortState.column === 'attendance' || sortState.column === 'awayfan') { 
+                vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; 
+                if (sortState.direction === 'asc') return (vA || Infinity) - (vB || Infinity); 
+            }
+            return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
+        });
+        
+        const isAwayMode = currentFilter.type === 'away_fan';
+        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('${isAwayMode ? 'awayfan' : 'attendance'}')">${isAwayMode ? '원정팬' : '관중'} ↕</th><th>감독</th></tr>`;
+        document.getElementById('table-body').innerHTML = dData.map(m => { 
+            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); 
+            const displayOpponent = isH ? m.awayteam : m.hometeam;
+            const val = isAwayMode ? (parseInt(m.awayfan)||0) : (parseInt(String(m.attendance).replace(/,/g,''))||0);
+            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td class="${isAwayMode?'highlight-red':''}">${val > 0 ? val.toLocaleString() : "-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; 
+        }).join('');
+    }
 
         // 결과 요약 출력 (v21.1 로직 유지)
         let tw=0, td=0, tl=0, tgf=0, tga=0; 
@@ -470,6 +514,7 @@
 </script>
 </body>
 </html>
+
 
 
 
