@@ -246,12 +246,16 @@
         updateView();
     }
 
+    // 신규: 원정팬 조회 기능 로직 (최다순 즉시 정렬 적용)
     function showAwayFanSection() {
         resetToAll(); 
         currentFilter.type = 'away_fan'; 
         const awayBtn = document.getElementById('btn-away-fan');
         if(awayBtn) awayBtn.className = 'away-btn active';
-        sortState = { column: 'date', direction: 'desc' }; 
+        
+        // 버튼 클릭 시 바로 원정팬(awayfan) 최다순(desc)으로 정렬 설정
+        sortState = { column: 'awayfan', direction: 'desc' }; 
+        
         updateView();
     }
 
@@ -307,7 +311,15 @@
 
         let tw=0, td=0, tl=0, tgf=0, tga=0; 
         filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
-        if(header.style.display !== "none") { summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`; summary.style.display = 'block'; }
+        if(header.style.display !== "none") {
+            // [수정] 원정팬 조회 모드일 때만 별도의 안내 문구 출력
+            if (currentFilter.type === 'away_fan') {
+                summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
+            } else {
+                summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
+            }
+            summary.style.display = 'block';
+        }
 
         let dData = [...filtered].sort((a,b) => {
             let vA = a[sortState.column], vB = b[sortState.column];
@@ -405,3 +417,4 @@
 </script>
 </body>
 </html>
+
