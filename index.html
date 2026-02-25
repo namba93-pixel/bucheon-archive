@@ -501,6 +501,10 @@
         allCheck.checked = Array.from(subs).every(cb => cb.checked);
     }
 
+    // [중요] 체크 상태가 바뀌었으므로 즉시 화면 갱신
+    updateView(); 
+}
+
     // '전체선택' 체크박스 클릭 시 실행
     function toggleAllLeagues(el) {
     const subs = document.querySelectorAll('input[name="p-league"]');
@@ -514,15 +518,13 @@
     updateView();
 }     
     
-    // [중요] 체크 상태가 바뀌었으므로 즉시 화면 갱신
-    updateView(); 
-}
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
     function formatSeasons(years) { if (!years || years.length === 0) return ""; const nums = years.map(Number).sort((a, b) => a - b); let res = []; let s = nums[0], e = nums[0]; for (let i = 1; i <= nums.length; i++) { if (i < nums.length && nums[i] === e + 1) e = nums[i]; else { res.push(s === e ? String(s) : `${s}~${String(e).slice(-2)}`); if (i < nums.length) { s = nums[i]; e = nums[i]; } } } return res.join(', '); }
     window.onload = loadData;
 </script>
 </body>
 </html>
+
 
 
 
