@@ -112,9 +112,9 @@
 <div class="container">
     <div id="team-section">
         <div id="team-filter-1" class="filter-container">
-            <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
-            <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
-            <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
+            <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
+            <div class="filter-item"><label>홈/원정경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
+            <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
             <div class="filter-item">
                 <label>대회별 조회</label>
                 <select id="select-league" onchange="updateView()">
@@ -131,8 +131,8 @@
         <div id="team-filter-2" class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 성함 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정팬 조회</button></div>
+            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
+            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
         </div>
         <div id="team-notice" class="data-notice">
             <b>💡 데이터 안내</b><br>
@@ -191,8 +191,8 @@
     <p>부천FC1995 데이터 포털은 개인이 운영하는 페이지입니다. <br> 
     대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 있을 수 있습니다. <br> 
     문의사항이나 오류 발견사항이 있으실 경우 아래 메일로 연락 부탁드립니다. <br> 
-    문의: namakear@naver.com <br> 
-    © 2026 BFC1995 데이터 포털. All Rights Reserved.</p>
+    문의: bfc.dataportal@gmail.com <br> 
+    © 2026 BFC1995 DATA PORTAL. All Rights Reserved.</p>
 </footer>
 
 <script>
@@ -239,7 +239,7 @@
 
     function getUnifiedTeamName(n) {
         if(!n) return "";
-        const mapping = { "상주 상무": "상무 축구단", "김천 상무": "상무 축구단", "아산 유나이티드": "아산 시민축구단", "천안시청": "천안시티FC", "화성 신우전자": "신우전자 축구단", "고양 Hi FC": "고양 자이크로", "경찰 축구단": "경찰 축구단", "대전 시티즌": "대전 하나시티즌", "제주 SK": "SK 축구단" };
+        const mapping = { "상주 상무": "상무 축구단", "김천 상무": "상무 축구단", "아산 유나이티드": "아산 시민축구단", "천안시청": "천안시티FC", "천안시청": "천안시티FC", "삼척 신우전자": "신우전자 축구단", "화성 신우전자": "신우전자 축구단", "고양 Hi FC": "고양 자이크로", "경찰 축구단": "경찰 축구단", "안산 무궁화": "경찰 축구단", "아산 무궁화": "경찰 축구단", "대전 시티즌": "대전 하나시티즌", "대전 하나시티즌": "대전 하나시티즌", "제주 유나이티드": "SK 축구단", "제주 SK": "SK 축구단" };
         return mapping[n] || n;
     }
 
@@ -548,6 +548,7 @@
 </script>
 </body>
 </html>
+
 
 
 
