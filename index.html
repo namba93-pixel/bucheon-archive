@@ -154,7 +154,6 @@
         });
     }
 
-    // [보정] 대회명 통합 로직
     function getUnifiedLeagueName(n) { 
         if(!n) return ""; const l = n.toLowerCase();
         if(l.includes("플레이오프") || l.includes("준플레이오프") || l.includes("승강")) return "플레이오프";
@@ -165,10 +164,10 @@
         if(l.includes("fa컵") || l.includes("코리아컵")) return "코리아컵"; return n; 
     }
 
-    // [복구] 팀명 통합 로직 (상대팀 조회 시 필수)
+    // [수정] 성현님께서 지정하신 팀들만 정확히 통합하도록 로직 고정
     function getUnifiedTeamName(n) {
         if(!n) return "";
-        const map = {
+        const mapping = {
             "상주 상무": "상무 축구단", "김천 상무": "상무 축구단",
             "아산 유나이티드": "아산 시민축구단", "아산 시민축구단": "아산 시민축구단",
             "천안시청": "천안시티FC", "천안시티FC": "천안시티FC",
@@ -176,9 +175,9 @@
             "고양 Hi FC": "고양 자이크로", "고양 자이크로": "고양 자이크로",
             "경찰 축구단": "경찰 축구단", "안산 무궁화": "경찰 축구단", "아산 무궁화": "경찰 축구단",
             "대전 시티즌": "대전 하나시티즌", "대전 하나시티즌": "대전 하나시티즌",
-            "제주 SK": "SK 축구단", "제주 유나이티드": "SK 축구단", 
+            "제주 SK": "SK 축구단", "제주 유나이티드": "SK 축구단"
         };
-        return map[n] || n;
+        return mapping[n] || n;
     }
 
     function getParticle(name) {
@@ -219,19 +218,31 @@
         const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary');
         
         if (currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef) {
-            header.style.display = "flex"; let tp = []; const rawOpp = sOpp || currentFilter.opponent;
-            const tOpp = getUnifiedTeamName(rawOpp); // 통합 팀명 적용
+            header.style.display = "flex"; let tp = []; 
+            const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent); 
+            
             if (mgr && sOppMgr) tp.push(`${mgr} 감독과 ${sOppMgr} 감독의 맞대결 결과`);
-            else { if (currentFilter.stadium) tp.push(`${currentFilter.stadium}에서`); if (tOpp) tp.push(`${tOpp}${getParticle(tOpp)} 경기결과`); else if (sOppMgr) tp.push(`${sOppMgr} 감독과의 경기결과`); else if (sRef) tp.push(`${sRef} 주심이 진행한 경기결과`); else if (mgr) tp.push(`${mgr} 감독의 경기결과`); else tp.push("조회 결과"); }
+            else { 
+                if (currentFilter.stadium) tp.push(`${currentFilter.stadium}에서`); 
+                if (tOpp) tp.push(`${tOpp}${getParticle(tOpp)} 경기결과`); 
+                else if (sOppMgr) tp.push(`${sOppMgr} 감독과의 경기결과`); 
+                else if (sRef) tp.push(`${sRef} 주심이 진행한 경기결과`); 
+                else if (mgr) tp.push(`${mgr} 감독의 경기결과`); 
+                else tp.push("조회 결과"); 
+            }
             if (year) tp.push(`(${year}시즌)`); titleEl.innerText = `🔍 ${tp.join(" ")}`;
             
             let filteredSummary = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = getUnifiedTeamName(isH ? a : h);
                 if (currentFilter.opponent && opp !== getUnifiedTeamName(currentFilter.opponent)) return false;
                 if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
-                if (sOpp && !opp.includes(getUnifiedTeamName(sOpp))) return false; if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; if (sRef && !(m.referee || "").includes(sRef)) return false;
-                if (year && !(m.date || "").startsWith(year)) return false; if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
-                if (loc && (loc === 'home' ? !isH : isH)) return false; if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
+                if (sOpp && !opp.includes(getUnifiedTeamName(sOpp))) return false; 
+                if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; 
+                if (sRef && !(m.referee || "").includes(sRef)) return false;
+                if (year && !(m.date || "").startsWith(year)) return false; 
+                if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
+                if (loc && (loc === 'home' ? !isH : isH)) return false; 
+                if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
             });
             let tw=0, td=0, tl=0, tgf=0, tga=0; 
             filteredSummary.forEach(m => { const isH = (m.hometeam || ""), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH.includes("부천") ? hS : aS, opS = isH.includes("부천") ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
@@ -243,13 +254,23 @@
             const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = getUnifiedTeamName(isH ? a : h);
             if (currentFilter.opponent && opp !== getUnifiedTeamName(currentFilter.opponent)) return false;
             if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
-            if (sOpp && !opp.includes(getUnifiedTeamName(sOpp))) return false; if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; if (sRef && !(m.referee || "").includes(sRef)) return false;
-            if (year && !(m.date || "").startsWith(year)) return false; if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
-            if (loc && (loc === 'home' ? !isH : isH)) return false; if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
+            if (sOpp && !opp.includes(getUnifiedTeamName(sOpp)) && !(isH?a:h).includes(sOpp)) return false; 
+            if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; 
+            if (sRef && !(m.referee || "").includes(sRef)) return false;
+            if (year && !(m.date || "").startsWith(year)) return false; 
+            if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
+            if (loc && (loc === 'home' ? !isH : isH)) return false; 
+            if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
         });
+        
         let dData = [...filtered].sort((a,b) => { let vA = a[sortState.column], vB = b[sortState.column]; if(sortState.column === 'attendance') { vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; } return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1); });
+        
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
-        document.getElementById('table-body').innerHTML = dData.map(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${getUnifiedTeamName(isH?m.awayteam:m.hometeam)}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; }).join('');
+        document.getElementById('table-body').innerHTML = dData.map(m => { 
+            const isH = (m.hometeam || ""), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH.includes("부천") ? hS : aS, opS = isH.includes("부천") ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); 
+            const displayOpponent = isH ? m.awayteam : m.hometeam;
+            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; 
+        }).join('');
     }
 
     function renderPlayerTable() {
@@ -328,16 +349,16 @@
             let team;
             if (type === 'opponentName') team = (m.hometeam || "").includes("부천") ? (m.awayteam || "") : (m.hometeam || "");
             else team = m[type] || "";
-            return getUnifiedTeamName(team); // 추천 목록에서도 통합 팀명 적용
+            return team; 
         }))].filter(item => item && item.includes(v)).slice(0, 10);
         if (s.length > 0) { rL.innerHTML = s.map(item => `<li onclick="selectSuggestion('${input.id}', '${item}')">${item}</li>`).join(''); rL.style.display = 'block'; } else rL.style.display = 'none';
     }
 
     function selectSuggestion(inputId, value) { const input = document.getElementById(inputId); if(input) { input.value = value; input.nextElementSibling.style.display = 'none'; updateView(); } }
     function toggleSort(col) { if(col === sortState.column) { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } else { sortState.column = col; sortState.direction = 'desc'; } updateView(); }
-    function filterByOpponent(name) { currentFilter.opponent = getUnifiedTeamName(name); updateView(); } // 클릭 시에도 통합 적용
+    function filterByOpponent(name) { currentFilter.opponent = getUnifiedTeamName(name); updateView(); } 
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
-    function resetToAll() { currentFilter = { opponent: null, stadium: null }; isTotalRankMode = false; ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); if(document.getElementById('check-all')){document.getElementById('check-all').checked=true; toggleAllLeagues(document.getElementById('check-all'));} document.getElementById('dynamic-header').style.display='none'; updateView(); }
+    function resetToAll() { currentFilter = { opponent: null, stadium: null }; isTotalRankMode = false; ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); if(document.getElementById('check-all')){document.getElementById('check-all').checked=true; updateSubLeagues();} document.getElementById('dynamic-header').style.display='none'; updateView(); }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
     function formatSeasons(years) { years.sort((a,b)=>a-b); let res=[]; let s=years[0], e=years[0]; for(let i=1;i<=years.length;i++){ if(i<years.length && parseInt(years[i])===parseInt(e)+1) e=years[i]; else { res.push(s===e?s:`${s}~${String(e).slice(-2)}`); if(i<years.length){s=years[i]; e=years[i];} } } return res.join(', '); }
     window.onload = loadData;
