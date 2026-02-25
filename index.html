@@ -474,6 +474,12 @@
         document.getElementById('team-filter-2').style.display = 'grid';
         document.getElementById('team-notice').style.display = 'block';
         
+        // 숨겼던 필터와 안내문구 다시 보이기
+        const playerFilter = document.querySelector('#player-section .filter-container');
+        const playerNotice = document.querySelector('#player-section .data-notice');
+        if (playerFilter) playerFilter.style.display = 'grid';
+        if (playerNotice) playerNotice.style.display = 'block';
+
         document.getElementById('dynamic-header').style.display='none'; 
         document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
         document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
@@ -491,4 +497,5 @@
 </script>
 </body>
 </html>
+
 
