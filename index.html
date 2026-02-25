@@ -76,13 +76,47 @@
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; line-height: 1.8; }
 
         @media (max-width: 768px) {
-            header h1 { font-size: 1.4rem; }
-            .mode-switch { padding: 0 10px; }
-            .mode-btn { padding: 10px 5px; font-size: 0.75rem; }
-            .ranking-container { grid-template-columns: repeat(2, 1fr); }
-            .filter-container { grid-template-columns: 1fr !important; padding: 15px; }
-            .checkbox-group { height: auto; padding: 10px; }
-        }
+    /* 1. 헤더 및 대시보드 조정 */
+    header { padding: 30px 10px 50px; }
+    header h1 { font-size: 1.3rem; }
+    .stats-dashboard { 
+        padding: 8px 15px; 
+        font-size: 0.75rem; 
+        border-radius: 20px; 
+    }
+
+    /* 2. 모드 전환 버튼 가독성 향상 */
+    .mode-switch { gap: 5px; padding: 0 5px; }
+    .mode-btn { 
+        padding: 12px 8px; 
+        font-size: 0.7rem; 
+        flex: 1; /* 버튼들이 가로로 꽉 차게 */
+        white-space: nowrap; 
+    }
+
+    /* 3. 테이블 최적화 (가로 폭 축소) */
+    table { min-width: 700px; } /* 1100px에서 700px로 축소 */
+    th, td { padding: 8px 5px; font-size: 0.75rem; }
+
+    /* 4. 필터 컨테이너 조정 */
+    .filter-container { 
+        grid-template-columns: 1fr !important; 
+        padding: 15px; 
+        gap: 10px;
+    }
+    
+    /* 5. 모달 창 최적화 */
+    .modal-content { 
+        padding: 25px 15px; 
+        border-radius: 20px; 
+    }
+    .modal-grid { grid-template-columns: 1fr; } /* 모달 안의 카드도 한 줄로 */
+    .modal-item-full { grid-column: span 1; }
+    .stat-value { font-size: 1.1rem; }
+
+    /* 6. 데이터 안내 문구 유지 및 조정 */
+    .data-notice { font-size: 0.75rem; padding: 12px; }
+}
     </style>
 </head>
 <body>
@@ -355,8 +389,8 @@
                 else if (bfcMgr && league) titleStr = `${bfcMgr} 감독의 ${league} 경기 결과`;
                 else if (bfcMgr) titleStr = `${bfcMgr} 감독의 경기 결과`;
                 else if (league) titleStr = `역대 ${league} 경기 결과`;
-                else if (loc === 'home') titleStr = "역대 홈 경기 결과";
-                else if (loc === 'away') titleStr = "역대 원정 경기 결과";
+                else if (loc === 'home') titleStr = "홈에서의 경기 결과";
+                else if (loc === 'away') titleStr = "원정에서의 경기 결과";
                 else titleStr = "조회 결과";
                 titleEl.innerText = `🔍 ${titleStr}${year ? ` (${year}시즌)` : ""}`;
             } else header.style.display = "none";
@@ -550,6 +584,7 @@
 </script>
 </body>
 </html>
+
 
 
 
