@@ -313,8 +313,19 @@
         
         let filtered = [];
 
+        // [수정] 투데이 히스토리(개막전) 진입 시 필터 영역 숨기기
         if (currentFilter.type === 'opening_match') {
-            header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
+        header.style.display = "flex"; 
+        titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
+        
+        // 검색창 및 필터 박스 숨기기
+        const teamFilter1 = document.getElementById('team-filter-1');
+        const teamFilter2 = document.getElementById('team-filter-2');
+        const teamNotice = document.getElementById('team-notice');
+        
+        if (teamFilter1) teamFilter1.style.display = 'none';
+        if (teamFilter2) teamFilter2.style.display = 'none';
+        if (teamNotice) teamNotice.style.display = 'none';
             const yearGroups = {};
             rawData.forEach(m => { if (m.league.includes("리그")) { const y = m.date.substring(0, 4); if (!yearGroups[y] || new Date(m.date) < new Date(yearGroups[y].date)) { yearGroups[y] = m; } } });
             filtered = Object.values(yearGroups).filter(m => (!loc || (loc === 'home' ? (m.hometeam||"").includes("부천") : !(m.hometeam||"").includes("부천"))) && (!mgr || (m.bfcmanager || m.bfc_manager) === mgr) && (!year || m.date.startsWith(year)) && (!selLg || getUnifiedLeagueName(m.league) === selLg));
@@ -423,18 +434,29 @@
     
     const h = document.getElementById('dynamic-header');
     const panel = document.getElementById('player-ranking-panel');
+    const summary = document.getElementById('dynamic-summary');
     
-    // 선수 기록 필터(시즌 선택, 이름 검색, 대회 체크박스)가 포함된 컨테이너 숨기기
+    // 1. 선수 기록 필터 영역만 숨기기
     const playerFilter = document.querySelector('#player-section .filter-container');
-    const playerNotice = document.querySelector('#player-section .data-notice');
-    
     if (playerFilter) playerFilter.style.display = 'none';
-    if (playerNotice) playerNotice.style.display = 'none';
+
+    // 2. [수정] 랭킹 페이지에서도 데이터 안내 문구는 보이게 설정
+    const playerNotice = document.querySelectorAll('.data-notice');
+    playerNotice.forEach(notice => {
+        notice.style.display = 'block'; // 숨기지 않고 다시 살립니다.
+    });
+
     if (panel) panel.style.display = "none"; 
 
     if (h) { 
         h.style.display = "flex"; 
         document.getElementById('dynamic-title').innerText = "🏆 부천FC1995 통산 기록 랭킹"; 
+        
+        // 3. [핵심] 원정관중 오안내 문구가 포함된 요약 영역만 비우기
+        if (summary) {
+            summary.innerHTML = ""; 
+            summary.style.display = "none";
+        }
     } 
     renderAllRankingsTable(); 
 }
@@ -524,6 +546,7 @@
 </script>
 </body>
 </html>
+
 
 
 
