@@ -136,7 +136,7 @@
                     <option value="K리그2">K리그2</option>
                     <option value="K3리그">K3리그</option>
                     <option value="플레이오프">플레이오프</option>
-                    <option value="코리아컵">코리아컵</option>
+                    <option value="FA컵/코리아컵">코리아컵</option>
                     <option value="챌린저스컵">챌린저스컵</option>
                 </select>
             </div>
@@ -172,7 +172,7 @@
                     <label><input type="checkbox" name="p-league" value="K리그1" checked onchange="updateSubLeagues()"> K리그1</label>
                     <label><input type="checkbox" name="p-league" value="K리그2" checked onchange="updateSubLeagues()"> K리그2</label>
                     <label><input type="checkbox" name="p-league" value="플레이오프" checked onchange="updateSubLeagues()"> 플레이오프</label>
-                    <label><input type="checkbox" name="p-league" value="코리아컵" checked onchange="updateSubLeagues()"> 코리아컵</label>
+                    <label><input type="checkbox" name="p-league" value="FA컵/코리아컵" checked onchange="updateSubLeagues()"> 코리아컵</label>
                 </div>
             </div>
         </div>
@@ -203,8 +203,7 @@
     <p>부천FC1995 데이터 포털은 개인이 운영하는 페이지입니다. <br> 
     대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 있을 수 있습니다. <br> 
     문의사항이나 오류 발견사항이 있으실 경우 아래 메일로 연락 부탁드립니다. <br> 
-    문의: namakear@naver.com <br>
-    © 2026 BFC1995 데이터 포털. All Rights Reserved.</p>
+    문의: namakear@naver.com</p>
 </footer>
 
 <script>
@@ -243,8 +242,7 @@
     function fixAllTimeStats() {
         let w=0, d=0, l=0, gf=0, ga=0;
         rawData.forEach(m => {
-            const isH = (m.hometeam || "").includes("부천");
-            const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
             const myS = isH ? hS : aS, opS = isH ? aS : hS;
             gf += myS; ga += opS; if (myS > opS) w++; else if (myS < opS) l++; else d++;
         });
@@ -260,8 +258,8 @@
     function getUnifiedTeamName(n) {
         if(!n) return "";
         const mapping = {
-            "상주 상무": "상무 축구단", "김천 상무": "상무 축구단",
-            "아산 유나이티드": "아산 시민축구단", "아산 시민축구단": "아산 시민축구단",
+            "상주 상무": "상무 축구단", "상주상무": "상무 축구단", "김천 상무": "상무 축구단", "김천상무": "상무 축구단", "광주 상무": "상무 축구단", "광주상무": "상무 축구단",
+            "아산 유나이티드": "아산 시민축구단", "아산 시민축구단": "아산 시민축구단", "충남 아산": "충남 아산 FC", "충남아산": "충남 아산 FC",
             "천안시청": "천안시티FC", "천안시티FC": "천안시티FC",
             "화성 신우전자": "신우전자 축구단", "삼척 신우전자": "신우전자 축구단",
             "고양 Hi FC": "고양 자이크로", "고양 자이크로": "고양 자이크로",
@@ -277,13 +275,10 @@
         const sorted = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
         let winPools = [], unbeatenPools = [];
         let curW = [], curU = [];
-
         sorted.forEach(m => {
             const isH = (m.hometeam || "").includes("부천"), myS = isH ? parseInt(m.homescored)||0 : parseInt(m.awayscored)||0, opS = isH ? parseInt(m.awayscored)||0 : parseInt(m.homescored)||0;
-            if (myS > opS) { curW.push(m); } 
-            else { if(curW.length > 1) winPools.push([...curW]); curW = []; }
-            if (myS >= opS) { curU.push(m); } 
-            else { if(curU.length > 1) unbeatenPools.push([...curU]); curU = []; }
+            if (myS > opS) { curW.push(m); } else { if(curW.length > 1) winPools.push([...curW]); curW = []; }
+            if (myS >= opS) { curU.push(m); } else { if(curU.length > 1) unbeatenPools.push([...curU]); curU = []; }
         });
         if(curW.length > 1) winPools.push(curW); if(curU.length > 1) unbeatenPools.push(curU);
         const maxW = Math.max(...winPools.map(p => p.length), 0), maxU = Math.max(...unbeatenPools.map(p => p.length), 0);
@@ -293,6 +288,16 @@
         const ongoingW = winPools.find(p => p.includes(lastG)), ongoingU = unbeatenPools.find(p => p.includes(lastG));
         if(ongoingW) { document.getElementById('cur-win-label').style.display = 'inline'; document.getElementById('cur-win-val').innerText = ongoingW.length; }
         if(ongoingU) { document.getElementById('cur-unbeaten-label').style.display = 'inline'; document.getElementById('cur-unbeaten-val').innerText = ongoingU.length; }
+    }
+
+    function getUnifiedLeagueName(n) { 
+        if(!n) return ""; const l = n.toLowerCase();
+        if(l.includes("플레이오프") || l.includes("준플레이오프") || l.includes("승강")) return "플레이오프";
+        if(l.includes("k리그1") || l.includes("k-리그1")) return "K리그1"; 
+        if(l.includes("k리그2") || l.includes("챌린지")) return "K리그2"; 
+        if(l.includes("fa컵") || l.includes("코리아컵")) return "코리아컵"; 
+        if(l.includes("k3리그")) return "K3리그";
+        return n; 
     }
 
     function renderTeamTable() {
@@ -337,7 +342,7 @@
             filtered = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppUnified = getUnifiedTeamName(isH ? a : h);
                 if (currentFilter.opponent && oppUnified !== getUnifiedTeamName(currentFilter.opponent)) return false;
-                if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp)) && !oppRaw.includes(sOpp)) return false; 
+                if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp))) return false; 
                 if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; 
                 if (sRef && !(m.referee || "").includes(sRef)) return false;
                 if (year && !m.date.startsWith(year)) return false; 
@@ -415,7 +420,7 @@
         const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] };
         pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); });
         const isGK = tot.con > 0 || tot.cs > 0;
-        document.getElementById('modal-data').innerHTML = `<div class="modal-header"><h2>${name} 선수 통산 기록</h2></div><div class="modal-grid"><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${formatSeasons(tot.seasons)}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${tot.g+tot.a}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>${isGK ? `<div class="stat-card"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(GAA ${(tot.con/tot.m).toFixed(2)})</div></div>` : ''}</div>`;
+        document.getElementById('modal-data').innerHTML = `<div class="modal-header"><h2>${name} 선수 통산 기록</h2></div><div class="modal-grid"><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${formatSeasons(tot.seasons)}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${tot.g+tot.a}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>${isGK ? `<div class="stat-card"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${(tot.con/tot.m).toFixed(2)})</div></div>` : ''}</div>`;
         document.getElementById('modal-overlay').style.display = 'flex';
     }
 
