@@ -5,413 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>부천FC1995 데이터 포털</title>
     <style>
-        /* [v22.2 디자인 엔진 100% 유지] */
-        :root { 
-            --bfc-red: #ed1c24; 
-            --bfc-black: #1a1a1a; 
-            --bg-gray: #f4f4f4; 
-            --win-gold: #ffd700; 
-        }
+        :root { --bfc-red: #ed1c24; --bfc-black: #1a1a1a; --bg-gray: #f4f4f4; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg-gray); color: #333; display: flex; flex-direction: column; min-height: 100vh; -webkit-text-size-adjust: none; }
 
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            margin: 0; 
-            background-color: var(--bg-gray); 
-            color: #333; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-            -webkit-text-size-adjust: none; 
-        }
+        header { background: linear-gradient(135deg, var(--bfc-black) 60%, var(--bfc-red)); color: white; padding: 40px 20px 60px; text-align: center; border-bottom: 6px solid var(--bfc-red); position: relative; }
+        .home-link { text-decoration: none; color: white; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+        header h1 { margin: 0; font-size: 1.8rem; font-weight: 900; }
 
-        header { 
-            background: linear-gradient(135deg, var(--bfc-black) 60%, var(--bfc-red)); 
-            color: white; 
-            padding: 40px 20px 60px; 
-            text-align: center; 
-            border-bottom: 6px solid var(--bfc-red); 
-            position: relative; 
-        }
+        .stats-dashboard { background: rgba(255, 255, 255, 0.1); margin: 20px auto 0; padding: 12px 25px; border-radius: 50px; display: inline-block; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.9rem; }
+        .stats-dashboard span { margin: 0 8px; font-weight: 600; }
 
-        .home-link { 
-            text-decoration: none; 
-            color: white; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 10px; 
-            cursor: pointer; 
-        }
+        .mode-switch { display: flex; justify-content: center; gap: 10px; margin-top: -25px; position: relative; z-index: 100; }
+        .mode-btn { background: white; border: 2px solid var(--bfc-red); color: var(--bfc-red); padding: 12px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mode-btn.active { background: var(--bfc-red); color: white; }
 
-        header h1 { 
-            margin: 0; 
-            font-size: 1.8rem; 
-            font-weight: 900; 
-        }
+        .history-btn { background: #ffd700; border: 2px solid #b8860b; color: #000; margin-left: 10px; }
+        .history-btn.active { background: #b8860b; color: #fff; }
+        
+        .away-btn { background: var(--bfc-black); border: 2px solid var(--bfc-black); color: white; height: 45px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.3s; width: 100%; }
+        .away-btn:hover { background: #333; }
+        .away-btn.active { background: #555; border-color: #555; }
 
-        .stats-dashboard { 
-            background: rgba(255, 255, 255, 0.1); 
-            margin: 20px auto 0; 
-            padding: 12px 25px; 
-            border-radius: 50px; 
-            display: inline-block; 
-            backdrop-filter: blur(5px); 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            font-size: 0.9rem; 
-        }
+        .container { max-width: 1300px; margin: 30px auto 50px; padding: 0 15px; flex: 1; position: relative; z-index: 10; }
 
-        .stats-dashboard span { 
-            margin: 0 8px; 
-            font-weight: 600; 
-        }
+        .ranking-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px; }
+        .ranking-box { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 4px solid var(--bfc-black); position: relative; }
+        .ranking-box h3 { margin: 0 0 15px 0; font-size: 0.95rem; color: var(--bfc-red); }
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
+        .more-btn { background: none; border: none; color: #999; font-size: 0.75rem; cursor: pointer; float: right; margin-top: -35px; }
 
-        .mode-switch { 
-            display: flex; 
-            justify-content: center; 
-            gap: 10px; 
-            margin-top: -25px; 
-            position: relative; 
-            z-index: 100; 
-        }
+        .filter-container { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end; }
+        .filter-item { display: flex; flex-direction: column; gap: 8px; position: relative; }
+        .filter-item label { font-size: 0.85rem; font-weight: bold; color: #666; }
 
-        .mode-btn { 
-            background: white; 
-            border: 2px solid var(--bfc-red); 
-            color: var(--bfc-red); 
-            padding: 12px 30px; 
-            border-radius: 50px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            transition: 0.3s; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-        }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; padding: 0 15px; background: #f9f9f9; border-radius: 10px; border: 1px solid #ddd; height: 45px; align-items: center; box-sizing: border-box; }
+        .checkbox-group label { font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; line-height: 1; }
+        .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; margin: 0; cursor: pointer; }
 
-        .mode-btn.active { 
-            background: var(--bfc-red); 
-            color: white; 
-        }
+        select, input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 0.95rem; outline: none; width: 100%; box-sizing: border-box; height: 45px; }
 
-        .history-btn { 
-            background: #ffd700; 
-            border: 2px solid #b8860b; 
-            color: #000; 
-            margin-left: 10px; 
-        }
+        .search-results { position: absolute; background: white; border: 1px solid #ddd; border-radius: 10px; width: 100%; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; margin-top: 75px; list-style: none; padding: 0; }
+        .search-results li { padding: 10px 15px; cursor: pointer; font-size: 0.85rem; border-bottom: 1px solid #f9f9f9; }
+        .search-results li:hover { background-color: #f0f0f0; color: var(--bfc-red); font-weight: bold; }
 
-        .history-btn.active { 
-            background: #b8860b; 
-            color: #fff; 
-        }
+        .view-header { margin-top: 20px; background: white; padding: 20px; border-radius: 15px; border-left: 6px solid var(--bfc-red); box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; flex-direction: column; gap: 10px; }
+        .view-summary { font-size: 0.95rem; color: #555; border-top: 1px dashed #eee; padding-top: 10px; }
+        .view-summary span { color: var(--bfc-red); font-weight: bold; }
 
-        .away-btn { 
-            background: var(--bfc-black); 
-            border: 2px solid var(--bfc-black); 
-            color: white; 
-            height: 45px; 
-            border-radius: 10px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            transition: 0.3s; 
-            width: 100%; 
-        }
+        .results-box { background: white; border-radius: 15px; margin-top: 15px; overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { background: #f8f9fa; padding: 15px; font-size: 0.75rem; color: #555; text-align: center; cursor: pointer; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem; }
 
-        .container { 
-            max-width: 1300px; 
-            margin: 30px auto 50px; 
-            padding: 0 15px; 
-            flex: 1; 
-            position: relative; 
-            z-index: 10; 
-        }
+        .clickable { color: var(--bfc-black); cursor: pointer; text-decoration: underline; text-decoration-color: #ddd; }
+        .win { color: var(--bfc-red); font-weight: bold; }
+        .highlight-red { color: var(--bfc-red); font-weight: bold; }
 
-        .ranking-container { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 15px; 
-            margin-bottom: 40px; 
-        }
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 95%; max-width: 550px; border-radius: 30px; padding: 40px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-header { text-align: center; border-bottom: 3px solid var(--bfc-red); padding-bottom: 20px; margin-bottom: 30px; }
+        .modal-header h2 { margin: 0; font-size: 1.6rem; font-weight: 900; color: var(--bfc-black); }
+        .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .modal-item-full { grid-column: span 2; }
+        .stat-card { background: #f8f9fa; border-radius: 15px; padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
+        .stat-label { font-size: 0.85rem; color: #888; font-weight: 500; }
+        .stat-value { font-size: 1.3rem; font-weight: 800; color: var(--bfc-red); }
+        .rate-small { font-size: 0.75rem; color: #666; font-weight: 400; margin-top: -4px; }
 
-        .ranking-box { 
-            background: white; 
-            border-radius: 15px; 
-            padding: 20px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05); 
-            border-top: 4px solid var(--bfc-black); 
-            position: relative; 
-        }
-
-        .ranking-box h3 { 
-            margin: 0 0 15px 0; 
-            font-size: 0.95rem; 
-            color: var(--bfc-red); 
-        }
-
-        .rank-item { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 8px 0; 
-            border-bottom: 1px solid #f0f0f0; 
-            font-size: 0.85rem; 
-        }
-
-        .more-btn { 
-            background: none; 
-            border: none; 
-            color: #999; 
-            font-size: 0.75rem; 
-            cursor: pointer; 
-            float: right; 
-            margin-top: -35px; 
-        }
-
-        .filter-container { 
-            background: white; 
-            border-radius: 15px; 
-            padding: 25px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-            gap: 15px; 
-            align-items: end; 
-        }
-
-        .filter-item { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 8px; 
-            position: relative; 
-        }
-
-        .filter-item label { 
-            font-size: 0.85rem; 
-            font-weight: bold; 
-            color: #666; 
-        }
-
-        .checkbox-group { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 15px; 
-            padding: 0 15px; 
-            background: #f9f9f9; 
-            border-radius: 10px; 
-            border: 1px solid #ddd; 
-            height: 45px; 
-            align-items: center; 
-            box-sizing: border-box; 
-        }
-
-        .checkbox-group label { 
-            font-size: 0.85rem; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            white-space: nowrap; 
-            line-height: 1; 
-        }
-
-        select, input { 
-            padding: 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 10px; 
-            font-size: 0.95rem; 
-            outline: none; 
-            width: 100%; 
-            box-sizing: border-box; 
-            height: 45px; 
-        }
-
-        .search-results { 
-            position: absolute; 
-            background: white; 
-            border: 1px solid #ddd; 
-            border-radius: 10px; 
-            width: 100%; 
-            max-height: 200px; 
-            overflow-y: auto; 
-            z-index: 1000; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-            display: none; 
-            margin-top: 75px; 
-            list-style: none; 
-            padding: 0; 
-        }
-
-        .search-results li { 
-            padding: 10px 15px; 
-            cursor: pointer; 
-            font-size: 0.85rem; 
-            border-bottom: 1px solid #f9f9f9; 
-        }
-
-        .view-header { 
-            margin-top: 20px; 
-            background: white; 
-            padding: 20px; 
-            border-radius: 15px; 
-            border-left: 6px solid var(--bfc-red); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-            display: none; 
-            flex-direction: column; 
-            gap: 10px; 
-        }
-
-        .view-summary { 
-            font-size: 0.95rem; 
-            color: #555; 
-            border-top: 1px dashed #eee; 
-            padding-top: 10px; 
-        }
-
-        .results-box { 
-            background: white; 
-            border-radius: 15px; 
-            margin-top: 15px; 
-            overflow-x: auto; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
-        }
-
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 1100px; 
-        }
-
-        th { 
-            background: #f8f9fa; 
-            padding: 15px; 
-            font-size: 0.75rem; 
-            color: #555; 
-            text-align: center; 
-            cursor: pointer; 
-        }
-
-        td { 
-            padding: 12px; 
-            text-align: center; 
-            border-bottom: 1px solid #f0f0f0; 
-            font-size: 0.85rem; 
-        }
-
-        .clickable { 
-            color: var(--bfc-black); 
-            cursor: pointer; 
-            text-decoration: underline; 
-        }
-
-        .win { 
-            color: var(--bfc-red); 
-            font-weight: bold; 
-        }
-
-        .highlight-red { 
-            color: var(--bfc-red); 
-            font-weight: bold; 
-        }
-
-        #modal-overlay { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.7); 
-            z-index: 1000; 
-            justify-content: center; 
-            align-items: center; 
-        }
-
-        .modal-content { 
-            background: white; 
-            width: 95%; 
-            max-width: 550px; 
-            border-radius: 30px; 
-            padding: 40px; 
-            position: relative; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
-        }
-
-        .modal-header { 
-            text-align: center; 
-            border-bottom: 3px solid var(--bfc-red); 
-            padding-bottom: 20px; 
-            margin-bottom: 30px; 
-        }
-
-        .modal-header h2 { 
-            margin: 0; 
-            font-size: 1.6rem; 
-            font-weight: 900; 
-            color: var(--bfc-black); 
-        }
-
-        .modal-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-        }
-
-        .modal-item-full { 
-            grid-column: span 2; 
-        }
-
-        .stat-card { 
-            background: #f8f9fa; 
-            border-radius: 15px; 
-            padding: 20px; 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 8px; 
-        }
-
-        .stat-label { 
-            font-size: 0.85rem; 
-            color: #888; 
-            font-weight: 500; 
-        }
-
-        .stat-value { 
-            font-size: 1.3rem; 
-            font-weight: 800; 
-            color: var(--bfc-red); 
-        }
-
-        .rate-small { 
-            font-size: 0.75rem; 
-            color: #666; 
-            font-weight: 400; 
-            margin-top: -4px; 
-        }
-
-        .data-notice { 
-            margin: 15px 0 25px; 
-            padding: 15px 20px; 
-            background: #fff; 
-            border-radius: 15px; 
-            border-left: 5px solid var(--bfc-red); 
-            font-size: 0.85rem; 
-            color: #666; 
-            line-height: 1.6; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
-        }
-
-        footer { 
-            background-color: var(--bfc-black); 
-            color: #999; 
-            text-align: center; 
-            padding: 40px 20px; 
-            margin-top: auto; 
-            line-height: 1.8; 
-        }
+        .data-notice { margin: 15px 0 25px; padding: 15px 20px; background: #fff; border-radius: 15px; border-left: 5px solid var(--bfc-red); font-size: 0.85rem; color: #666; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; line-height: 1.8; }
 
         @media (max-width: 768px) {
             header h1 { font-size: 1.4rem; }
             .mode-switch { padding: 0 10px; }
             .mode-btn { padding: 10px 5px; font-size: 0.75rem; }
             .ranking-container { grid-template-columns: repeat(2, 1fr); }
-            .filter-container { grid-template-columns: 1fr !important; }
+            .filter-container { grid-template-columns: 1fr !important; padding: 15px; }
             .checkbox-group { height: auto; padding: 10px; }
         }
     </style>
@@ -429,13 +98,8 @@
     <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 데이터 포털</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
-        <span id="stat-total">0경기</span> | 
-        <span id="stat-w">0승</span> 
-        <span id="stat-d">0무</span> 
-        <span id="stat-l">0패</span> | 
-        <span id="stat-gf">0득</span> 
-        <span id="stat-ga">0실</span> | 
-        <span id="stat-rate">0%</span>
+        <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
+        <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
     </div>
 </header>
 
@@ -460,6 +124,7 @@
                     <option value="K3리그">K3리그</option>
                     <option value="플레이오프">플레이오프</option>
                     <option value="코리아컵">코리아컵</option>
+                    <option value="챌린저스컵">챌린저스컵</option>
                 </select>
             </div>
         </div>
@@ -470,8 +135,9 @@
             <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정팬 조회</button></div>
         </div>
         <div id="team-notice" class="data-notice">
-            • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회 데이터를 기준으로 제공합니다.<br>
-            • 현재 대한축구협회에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부 누락되어 있습니다.
+            <b>💡 데이터 안내</b><br>
+            • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회 데이터를 기준으로 제공합니다. <br>
+            • 현재 연맹 등에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부 누락되어 있습니다.
         </div>
     </div>
 
@@ -500,16 +166,14 @@
         </div>
         <div class="data-notice">
             <b>💡 데이터 안내</b><br>
-            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
-            • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다. <br>
-            • 선수 이름을 클릭하시면, 선수 개인의 부천 통산 기록을 볼 수 있습니다.
+            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다.
         </div>
     </div>
 
     <div id="dynamic-header" class="view-header">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div id="dynamic-title" style="font-weight:bold; font-size:1.1rem; word-break:keep-all;"></div>
-            <button class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem; flex:none;" onclick="resetToAll()">이전 결과로 돌아가기</button>
+            <button id="btn-back" class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem; flex:none;" onclick="resetToAll()">이전 결과로 돌아가기</button>
         </div>
         <div id="dynamic-summary" class="view-summary"></div>
     </div>
@@ -522,10 +186,11 @@
 </div>
 
 <footer>
-    <p>부천FC1995 데이터 포털은 개인이 운영하는 페이지입니다.<br> 
-    대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 있을 수 있습니다.<br> 
-    문의사항이나 오류 발견사항이 있으실 경우 아래 메일로 연락 부탁드립니다.<br> 
-    문의: namakear@naver.com</p>
+    <p>부천FC1995 데이터 포털은 개인이 운영하는 페이지입니다. <br> 
+    대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 있을 수 있습니다. <br> 
+    문의사항이나 오류 발견사항이 있으실 경우 아래 메일로 연락 부탁드립니다. <br> 
+    문의: namakear@naver.com <br> 
+    © 2026 BFC1995 데이터 포털. All Rights Reserved.</p>
 </footer>
 
 <script>
@@ -535,13 +200,12 @@
     let rawData = [], playerSeasonData = [], currentMode = 'team';
     let sortState = { column: 'date', direction: 'desc' };
     let currentFilter = { opponent: null, stadium: null, type: null }; 
-    let isTotalRankMode = false, selectedPlayerSearchName = ""; 
+    let isTotalRankMode = false;
+    let selectedPlayerSearchName = ""; 
 
     async function loadData() {
         try {
-            const [tRes, pRes] = await Promise.all([
-                fetch(TEAM_URL + "&cb=" + Date.now()), fetch(PLAYER_URL + "&cb=" + Date.now())
-            ]);
+            const [tRes, pRes] = await Promise.all([fetch(TEAM_URL + "&cb=" + Date.now()), fetch(PLAYER_URL + "&cb=" + Date.now())]);
             rawData = parseCSV(await tRes.text()); playerSeasonData = parseCSV(await pRes.text());
             const now = new Date(); document.getElementById('today-date').innerText = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 기준`;
             fixAllTimeStats(); calculateTotalRankings(); initFilters(); updateView();
@@ -560,15 +224,37 @@
         });
     }
 
-    function toggleSubLeagues() { const subs = document.querySelectorAll('input[name="p-league"]'); document.getElementById('check-all').checked = Array.from(subs).every(cb => cb.checked); updateView(); }
-    function toggleAllLeagues(el) { document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = el.checked); updateView(); }
-    function updateSubLeagues() { toggleSubLeagues(); }
+    function getUnifiedLeagueName(n) { 
+        if(!n) return ""; const l = n.toLowerCase();
+        if(l.includes("플레이오프") || l.includes("준플레이오프") || l.includes("승강")) return "플레이오프";
+        if(l.includes("k리그1") || l.includes("k-리그1")) return "K리그1"; 
+        if(l.includes("k리그2") || l.includes("챌린지")) return "K리그2"; 
+        if(l.includes("fa컵") || l.includes("코리아컵")) return "코리아컵"; 
+        if(l.includes("k3리그")) return "K3리그";
+        if(l.includes("챌린저스컵")) return "챌린저스컵";
+        return n; 
+    }
+
+    function getUnifiedTeamName(n) {
+        if(!n) return "";
+        const mapping = { "상주 상무": "상무 축구단", "김천 상무": "상무 축구단", "아산 유나이티드": "아산 시민축구단", "천안시청": "천안시티FC", "화성 신우전자": "신우전자 축구단", "고양 Hi FC": "고양 자이크로", "경찰 축구단": "경찰 축구단", "대전 시티즌": "대전 하나시티즌", "제주 SK": "SK 축구단" };
+        return mapping[n] || n;
+    }
+
+    function getWithParticle(name, isResult = false) {
+        if(!name) return ""; 
+        const charCode = name.charCodeAt(name.length - 1); 
+        const hasBatchim = (charCode - 0xAC00) % 28 > 0;
+        if (isResult) return hasBatchim ? "과의" : "와의";
+        return hasBatchim ? "과" : "와";
+    }
 
     function fixAllTimeStats() {
         let w=0, d=0, l=0, gf=0, ga=0;
         rawData.forEach(m => {
-            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-            const myS = isH ? hS : aS, opS = isH ? aS : hS;
+            const isH = (m.hometeam || "").includes("부천");
+            const myS = isH ? parseInt(m.homescored)||0 : parseInt(m.awayscored)||0;
+            const opS = isH ? parseInt(m.awayscored)||0 : parseInt(m.homescored)||0;
             gf += myS; ga += opS; if (myS > opS) w++; else if (myS < opS) l++; else d++;
         });
         document.getElementById('stat-total').innerText = rawData.length + "경기";
@@ -577,18 +263,45 @@
         document.getElementById('stat-rate').innerText = rawData.length ? (((w + d * 0.5) / rawData.length) * 100).toFixed(1) + "%" : "0%";
     }
 
-    function getUnifiedTeamName(n) {
-        if(!n) return "";
-        const mapping = { "상주 상무": "상무 축구단", "김천 상무": "상무 축구단", "아산 유나이티드": "아산 시민축구단", "천안시청": "천안시티FC", "대전 시티즌": "대전 하나시티즌", "제주 SK": "SK 축구단" };
-        return mapping[n] || n;
+    function switchMode(m) {
+        currentMode = m; resetToAll();
+        document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none';
+        document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
+        document.getElementById('mode-t').className = (m === 'team' ? 'mode-btn active' : 'mode-btn');
+        document.getElementById('mode-p').className = (m === 'player' ? 'mode-btn active' : 'mode-btn');
+        updateView();
     }
 
-    function getUnifiedLeagueName(n) { 
-        if(!n) return ""; const l = n.toLowerCase();
-        if(l.includes("플레이오프") || l.includes("준플레이오프")) return "플레이오프";
-        if(l.includes("k리그1")) return "K리그1"; if(l.includes("k리그2")) return "K리그2"; 
-        if(l.includes("fa컵") || l.includes("코리아컵")) return "코리아컵"; if(l.includes("k3리그")) return "K3리그";
-        return n; 
+    function showHistorySection() {
+        resetToAll(); currentFilter.type = 'opening_match';
+        document.getElementById('team-section').style.display = 'block';
+        document.getElementById('player-section').style.display = 'none';
+        document.getElementById('mode-h').className = 'mode-btn history-btn active';
+        document.getElementById('mode-t').className = 'mode-btn';
+        document.getElementById('mode-p').className = 'mode-btn';
+        updateView();
+    }
+
+    // [핵심] 원정팬 조회 시 모든 검색 필터를 숨기는 로직 적용
+    function showAwayFanSection() {
+        resetToAll(); 
+        currentFilter.type = 'away_fan'; 
+        
+        // 1. 모든 팀 필터 영역 숨김
+        document.getElementById('team-filter-1').style.display = 'none';
+        document.getElementById('team-filter-2').style.display = 'none';
+        document.getElementById('team-notice').style.display = 'none';
+        
+        // 2. 선수 섹션 숨김
+        document.getElementById('player-section').style.display = 'none';
+        
+        // 3. 버튼 상태 동기화
+        const btn = document.getElementById('btn-away-fan'); if(btn) btn.className = 'away-btn active';
+        document.getElementById('mode-t').className = 'mode-btn';
+        document.getElementById('mode-p').className = 'mode-btn';
+        
+        sortState = { column: 'awayfan', direction: 'desc' };
+        updateView();
     }
 
     function updateView() { if (currentMode === 'team' || currentFilter.type) renderTeamTable(); else { if (isTotalRankMode) renderAllRankingsTable(); else renderPlayerTable(); } }
@@ -597,109 +310,163 @@
         const year = document.getElementById('select-year').value, loc = document.getElementById('select-location').value, mgr = document.getElementById('select-manager').value, selLg = document.getElementById('select-league').value;
         const sOpp = (document.getElementById('search-opponent')?.value || "").trim(), sOppMgr = (document.getElementById('search-opp-manager')?.value || "").trim(), sRef = (document.getElementById('search-referee')?.value || "").trim();
         const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary');
+        
         let filtered = [];
 
-        // [문제 해결] 투데이 히스토리 조회 시 필터 가이드 숨김
         if (currentFilter.type === 'opening_match') {
-            header.style.display = "flex"; 
-            titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
-            document.getElementById('team-filter-1').style.display = 'none';
-            document.getElementById('team-filter-2').style.display = 'none';
-            document.getElementById('team-notice').style.display = 'none';
+            header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
             const yearGroups = {};
             rawData.forEach(m => { if (m.league.includes("리그")) { const y = m.date.substring(0, 4); if (!yearGroups[y] || new Date(m.date) < new Date(yearGroups[y].date)) { yearGroups[y] = m; } } });
-            filtered = Object.values(yearGroups);
-        } else if (currentFilter.type === 'away_fan') {
+            filtered = Object.values(yearGroups).filter(m => (!loc || (loc === 'home' ? (m.hometeam||"").includes("부천") : !(m.hometeam||"").includes("부천"))) && (!mgr || (m.bfcmanager || m.bfc_manager) === mgr) && (!year || m.date.startsWith(year)) && (!selLg || getUnifiedLeagueName(m.league) === selLg));
+        } 
+        else if (currentFilter.type === 'away_fan') {
             header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 원정경기에 함께한 원정관중 기록`;
-            document.getElementById('team-filter-1').style.display = 'none';
-            document.getElementById('team-filter-2').style.display = 'none';
-            document.getElementById('team-notice').style.display = 'none';
             filtered = rawData.filter(m => !(m.hometeam || "").includes("부천") && parseInt(m.date.substring(0,4)) >= 2023);
-        } else {
+        }
+        else {
             const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef;
             if (hasFilter) {
                 header.style.display = "flex";
-                const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent), bfcMgr = mgr, oppMgr = sOppMgr, ref = sRef, lg = selLg;
-                let titleStr = ref ? `${ref} 주심 주관 경기` : (bfcMgr && oppMgr ? `${oppMgr} vs ${bfcMgr} 감독 대결` : (oppMgr ? `${oppMgr} 감독 상대 결과` : (tOpp ? `${tOpp}${getWithParticle(tOpp, true)} 결과` : (bfcMgr ? `${bfcMgr} 감독 결과` : (lg ? `역대 ${lg} 결과` : "조회 결과")))));
+                const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent), stadium = currentFilter.stadium, league = selLg, bfcMgr = mgr, oppMgr = sOppMgr, ref = sRef;
+                let titleStr = "";
+                if (ref) titleStr = `${ref} 주심이 진행한 경기 결과`;
+                else if (bfcMgr && oppMgr) titleStr = `${oppMgr} 감독과 ${bfcMgr} 감독의 맞대결 결과`;
+                else if (oppMgr && tOpp) titleStr = `${tOpp}의 ${oppMgr} 감독을 상대로 한 경기 결과`;
+                else if (oppMgr) titleStr = `${oppMgr} 감독과의 경기 결과`;
+                else if (stadium && tOpp && bfcMgr) titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp)} ${bfcMgr} 감독의 ${league ? league + ' ' : ''}경기 결과`;
+                else if (stadium && tOpp) titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp, true)} ${league ? league + ' ' : ''}경기 결과`;
+                else if (tOpp && bfcMgr && league) titleStr = `${tOpp}${getWithParticle(tOpp)} ${bfcMgr} 감독의 ${league} 경기 결과`;
+                else if (tOpp && league) titleStr = `${tOpp}${getWithParticle(tOpp, true)} ${league} 경기 결과`;
+                else if (tOpp && bfcMgr) titleStr = `${tOpp}${getWithParticle(tOpp)} ${bfcMgr} 감독의 경기 결과`;
+                else if (tOpp) titleStr = `${tOpp}${getWithParticle(tOpp, true)} 경기 결과`;
+                else if (bfcMgr && league) titleStr = `${bfcMgr} 감독의 ${league} 경기 결과`;
+                else if (bfcMgr) titleStr = `${bfcMgr} 감독의 경기 결과`;
+                else if (league) titleStr = `역대 ${league} 경기 결과`;
+                else titleStr = "조회 결과";
                 titleEl.innerText = `🔍 ${titleStr}${year ? ` (${year}시즌)` : ""}`;
             } else header.style.display = "none";
             filtered = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppUnified = getUnifiedTeamName(isH ? a : h);
                 if (currentFilter.opponent && oppUnified !== getUnifiedTeamName(currentFilter.opponent)) return false;
-                if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp))) return false; 
+                if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
+                if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp)) && !oppRaw.includes(sOpp)) return false; 
                 if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; 
                 if (sRef && !(m.referee || "").includes(sRef)) return false;
                 if (year && !m.date.startsWith(year)) return false; 
-                if (mgr && (m.bfcmanager || m.bfc_manager) === mgr) return false;
+                if (mgr && (m.bfcmanager || m.bfc_manager) !== mgr) return false;
                 if (loc && (loc === 'home' ? !isH : isH)) return false; 
                 if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
             });
         }
 
+        let tw=0, td=0, tl=0, tgf=0, tga=0; 
+        filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
         if(header.style.display !== "none") {
-            let tw=0, td=0, tl=0, tgf=0, tga=0; 
-            filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
-            const rate = filtered.length ? (((tw + td * 0.5) / filtered.length) * 100).toFixed(1) : 0;
             if (currentFilter.type === 'away_fan') summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
-            else if (currentFilter.type === 'opening_match') summary.innerHTML = `부천FC1995 역대 개막전 통산 전적: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (승률 ${rate}%)`;
-            else summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득 ${tga}실) - 승률 ${rate}%`;
+            else summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
             summary.style.display = 'block';
         }
 
+        let dData = [...filtered].sort((a,b) => {
+            let vA = a[sortState.column], vB = b[sortState.column];
+            if(sortState.column === 'attendance' || sortState.column === 'awayfan') { 
+                vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; 
+                if (sortState.direction === 'asc') return (vA || Infinity) - (vB || Infinity); 
+            }
+            return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
+        });
+        
         const isAwayMode = currentFilter.type === 'away_fan';
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('${isAwayMode ? 'awayfan' : 'attendance'}')">${isAwayMode ? '원정팬' : '관중'} ↕</th><th>감독</th></tr>`;
-        document.getElementById('table-body').innerHTML = [...filtered].sort((a,b) => {
-            let vA = a[sortState.column], vB = b[sortState.column];
-            if(sortState.column === 'attendance' || sortState.column === 'awayfan') { vA = parseInt(String(vA).replace(/,/g,''))||0; vB = parseInt(String(vB).replace(/,/g,''))||0; }
-            return sortState.direction === 'asc' ? (vA > vB ? 1 : -1) : (vA < vB ? 1 : -1);
-        }).map(m => {
-            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
+        document.getElementById('table-body').innerHTML = dData.map(m => { 
+            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); 
+            const displayOpponent = isH ? m.awayteam : m.hometeam;
             const val = isAwayMode ? (parseInt(m.awayfan)||0) : (parseInt(String(m.attendance).replace(/,/g,''))||0);
-            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td class="${sortState.column===(isAwayMode?'awayfan':'attendance')?'highlight-red':''}">${val > 0 ? val.toLocaleString() : "-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
+            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td class="${isAwayMode?'highlight-red':''}">${val > 0 ? val.toLocaleString() : "-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; 
         }).join('');
     }
 
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value, selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
-        const header = document.getElementById('dynamic-header'), panel = document.getElementById('player-ranking-panel');
-        if (year || selectedPlayerSearchName) { header.style.display = "flex"; panel.style.display = "none"; document.getElementById('dynamic-title').innerText = "🔍 선수 개인 기록"; }
-        else { header.style.display = "none"; panel.style.display = "block"; }
-        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSortOnlyDesc('match')">경기 ↕</th><th onclick="toggleSortOnlyDesc('goal')">득점 ↕</th><th onclick="toggleSortOnlyDesc('assist')">도움 ↕</th><th onclick="toggleSortOnlyDesc('ap')">포인트 ↕</th><th onclick="toggleSortOnlyDesc('cs')">CS ↕</th><th>경고/퇴장</th></tr>`;
+        const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary'), panel = document.getElementById('player-ranking-panel');
+        if (year || selectedPlayerSearchName) { 
+            header.style.display = "flex"; panel.style.display = "none"; titleEl.innerText = `🔍 선수 기록 조회 결과`; 
+            summary.style.display = "none";
+        } else { header.style.display = "none"; panel.style.display = "block"; }
+        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSortOnlyDesc('match')">경기 ↕</th><th onclick="toggleSortOnlyDesc('goal')">득점 ↕</th><th onclick="toggleSortOnlyDesc('assist')">도움 ↕</th><th onclick="toggleSortOnlyDesc('ap')">포인트 ↕</th><th onclick="toggleSortOnlyDesc('pk')">PK ↕</th><th onclick="toggleSortOnlyDesc('cs')">클린시트 ↕</th><th onclick="toggleSortOnlyDesc('yc')">경고 ↕</th><th onclick="toggleSortOnlyDesc('rc')">퇴장 ↕</th></tr>`;
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!selectedPlayerSearchName || p.name === selectedPlayerSearchName) && selectedLeagues.includes(getUnifiedLeagueName(p.league)));
         const grouped = {};
         filtered.forEach(p => {
-            const key = `${p.name}_${p.season}`; if (!grouped[key]) grouped[key] = { name: p.name, season: p.season, match: 0, goal: 0, assist: 0, cs: 0, yc: 0, rc: 0 };
-            grouped[key].match += parseInt(p.match)||0; grouped[key].goal += parseInt(p.goal)||0; grouped[key].assist += parseInt(p.assist)||0; grouped[key].cs += parseInt(p.cleansheet)||0; grouped[key].yc += parseInt(p.yc)||0; grouped[key].rc += parseInt(p.rc)||0;
+            const key = `${p.name}_${p.season}`; if (!grouped[key]) grouped[key] = { name: p.name, season: p.season, match: 0, goal: 0, assist: 0, pk: 0, cs: 0, yc: 0, rc: 0, details: {} };
+            const uniLg = getUnifiedLeagueName(p.league); if (!grouped[key].details[uniLg]) grouped[key].details[uniLg] = { m: 0, g: 0, a: 0, pk: 0, cs: 0, yc: 0, rc: 0 };
+            grouped[key].match += parseInt(p.match)||0; grouped[key].goal += parseInt(p.goal)||0; grouped[key].assist += parseInt(p.assist)||0; grouped[key].pk += parseInt(p.pk)||0; grouped[key].cs += parseInt(p.cleansheet)||0; grouped[key].yc += parseInt(p.yc)||0; grouped[key].rc += parseInt(p.rc)||0;
+            grouped[key].details[uniLg].m += parseInt(p.match)||0; grouped[key].details[uniLg].g += parseInt(p.goal)||0; grouped[key].details[uniLg].a += parseInt(p.assist)||0; grouped[key].details[uniLg].pk += parseInt(p.pk)||0; grouped[key].details[uniLg].cs += parseInt(p.cleansheet)||0; grouped[key].details[uniLg].yc += parseInt(p.yc)||0; grouped[key].details[uniLg].rc += parseInt(p.rc)||0;
         });
-        document.getElementById('table-body').innerHTML = Object.values(grouped).sort((a,b) => sortState.direction === 'asc' ? a[sortState.column] - b[sortState.column] : b[sortState.column] - a[sortState.column]).map(p => `<tr><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td>전체</td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.goal+p.assist}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td>${p.yc}/${p.rc}</td></tr>`).join('');
+        let dData = Object.values(grouped).sort((a,b) => sortState.column === 'season' ? (sortState.direction === 'asc' ? a.season - b.season : b.season - a.season) : (b[sortState.column] - a[sortState.column]));
+        document.getElementById('table-body').innerHTML = dData.map(p => {
+            const shownLgs = Object.keys(p.details); const totalLgs = [...new Set(playerSeasonData.filter(d => d.name === p.name && d.season === p.season).map(d => getUnifiedLeagueName(d.league)))];
+            const sumText = shownLgs.length === 1 ? shownLgs[0] : (totalLgs.every(lg => shownLgs.includes(lg)) ? "전체 시즌" : "일부 대회");
+            let dHtml = shownLgs.length > 1 ? Object.entries(p.details).sort(([,a],[,b])=>b.m-a.m).map(([lgN, d]) => `<tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;"><td style="border:none;"></td><td style="border:none;"></td><td style="text-align:left; padding-left:20px;">└ ${lgN}</td><td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${(parseInt(d.g)||0) + (parseInt(d.a)||0)}</td><td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td><td>${d.rc}</td></tr>`).join('') : "";
+            return `<tr style="${shownLgs.length > 1 ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${sumText}</td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${(parseInt(p.goal)||0) + (parseInt(p.assist)||0)}</td><td class="${sortState.column==='pk'?'highlight-red':''}">${p.pk}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td class="${sortState.column==='yc'?'highlight-red':''}">${p.yc}</td><td class="${sortState.column==='rc'?'highlight-red':''}">${p.rc}</td></tr>` + dHtml;
+        }).join('');
     }
 
-    function showPlayerTotal(name) {
-        const pData = playerSeasonData.filter(p => p.name === name);
-        const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] };
-        pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); });
-        const isGK = tot.con > 0 || tot.cs > 0;
-        document.getElementById('modal-data').innerHTML = `<div class="modal-header"><h2>${name} 선수 통산 기록</h2></div><div class="modal-grid"><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${formatSeasons(tot.seasons)}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${tot.g+tot.a}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>${isGK ? `<div class="stat-card"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${(tot.con/tot.m).toFixed(2)})</div></div>` : ''}</div>`;
-        document.getElementById('modal-overlay').style.display = 'flex';
+    function calculateTotalRankings() {
+        const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0 }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; });
+        const r = (id, k, u) => { const s = Object.values(t).sort((a,b) => b[k] !== a[k] ? b[k] - a[k] : a.match - b.match).slice(0, 7); document.getElementById(id).innerHTML = s.map((p,i) => `<div class="rank-item"><span>${i+1}. ${p.name}</span><b>${p[k]}${u}</b></div>`).join(''); };
+        r('rank-match', 'match', '경기'); r('rank-goal', 'goal', '골'); r('rank-ap', 'ap', 'pt'); r('rank-cs', 'cs', '회');
     }
 
-    function switchMode(m) { currentMode = m; resetToAll(); document.getElementById('team-section').style.display = m === 'team' ? 'block' : 'none'; document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none'; document.getElementById('mode-t').className = (m === 'team' ? 'mode-btn active' : 'mode-btn'); document.getElementById('mode-p').className = (m === 'player' ? 'mode-btn active' : 'mode-btn'); updateView(); }
-    function showHistorySection() { resetToAll(); currentFilter.type = 'opening_match'; updateView(); }
-    function showAwayFanSection() { resetToAll(); currentFilter.type = 'away_fan'; updateView(); }
-    function calculateTotalRankings() { const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, cs:0 }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].cs += parseInt(d.cleansheet)||0; }); const r = (id, k) => { const s = Object.values(t).sort((a,b) => b[k] - a[k]).slice(0, 7); document.getElementById(id).innerHTML = s.map((p,i) => `<div class="rank-item"><span>${i+1}. ${p.name}</span><b>${p[k]}</b></div>`).join(''); }; r('rank-match', 'match'); r('rank-goal', 'goal'); r('rank-ap', 'goal'); r('rank-cs', 'cs'); }
-    function initFilters() { const tY = [...new Set(rawData.map(m => (m.date || "").substring(0,4)))].sort(); const yS = document.getElementById('select-year'); if(yS) tY.forEach(y => yS.add(new Option(y + " 시즌", y))); const mgrs = [...new Set(rawData.map(m => m.bfcmanager || m.bfc_manager))].filter(Boolean).sort(); const mS = document.getElementById('select-manager'); if(mS) mgrs.forEach(m => mS.add(new Option(m, m))); const pyS = document.getElementById('p-select-year'); if(pyS) [...new Set(playerSeasonData.map(p => p.season))].sort().forEach(y => pyS.add(new Option(y + " 시즌", y))); }
-    function showSuggestions(input, type) { const v = input.value.trim(); const rL = input.nextElementSibling; if (!v) { rL.style.display = 'none'; return; } let suggestions = (type === 'opponentName') ? [...new Set(rawData.map(m => (m.hometeam||"").includes("부천") ? m.awayteam : m.hometeam))].filter(item => item && !item.includes("부천") && item.includes(v)) : [...new Set(playerSeasonData.map(p => p.name))].filter(name => name.includes(v)); rL.innerHTML = suggestions.slice(0, 10).map(item => `<li onclick="selectSuggestion('${input.id}', '${item}', '${type}')">${item}</li>`).join(''); rL.style.display = suggestions.length ? 'block' : 'none'; }
-    function selectSuggestion(inputId, value, type) { document.getElementById(inputId).value = value; document.getElementById(inputId).nextElementSibling.style.display = 'none'; if(type==='playerName') selectedPlayerSearchName = value; else currentFilter.opponent = value; updateView(); }
-    function toggleSort(col) { sortState.direction = (col === sortState.column && sortState.direction === 'desc') ? 'asc' : 'desc'; sortState.column = col; updateView(); }
-    function toggleSortOnlyDesc(col) { sortState.column = col; sortState.direction = 'desc'; updateView(); }
-    function filterByOpponent(name) { if(name.includes("부천")) return; currentFilter.opponent = name; updateView(); }
-    function resetToAll() { currentFilter = { opponent: null, stadium: null, type: null }; sortState = { column: 'date', direction: 'desc' }; selectedPlayerSearchName = ""; document.getElementById('team-filter-1').style.display = 'grid'; document.getElementById('team-filter-2').style.display = 'grid'; document.getElementById('team-notice').style.display = 'block'; document.getElementById('dynamic-header').style.display='none'; updateView(); }
-    function formatSeasons(years) { if (!years || years.length === 0) return ""; const nums = years.map(Number).sort((a, b) => a - b); let res = []; let start = nums[0], end = nums[0]; for (let i = 1; i <= nums.length; i++) { if (i < nums.length && nums[i] === end + 1) end = nums[i]; else { if (start === end) res.push(String(start)); else res.push(`${start}~${String(end).slice(-2)}`); if (i < nums.length) { start = nums[i]; end = nums[i]; } } } return res.join(', '); }
-    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-    function getWithParticle(name, isResult = false) { if(!name) return ""; const charCode = name.charCodeAt(name.length - 1); const hasBatchim = (charCode - 0xAC00) % 28 > 0; return isResult ? (hasBatchim ? "과의" : "와의") : (hasBatchim ? "과" : "와"); }
-    function showAllRankings(col) { isTotalRankMode = true; sortState = { column: col, direction: 'desc' }; const h = document.getElementById('dynamic-header'), panel = document.getElementById('player-ranking-panel'); if (h) { h.style.display = "flex"; document.getElementById('dynamic-title').innerText = "🏆 통산기록 랭킹 조회"; } renderAllRankingsTable(); }
-    function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = t[d.name].goal + t[d.name].assist; t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
+    function showAllRankings(col) { isTotalRankMode = true; sortState = { column: col, direction: 'desc' }; const h = document.getElementById('dynamic-header'), panel = document.getElementById('player-ranking-panel'), summary = document.getElementById('dynamic-summary'); if (h) { h.style.display = "flex"; document.getElementById('dynamic-title').innerText = `🏆 통산기록 랭킹 조회`; if(summary) summary.style.display = "none"; if(panel) panel.style.display = "none"; } renderAllRankingsTable(); }
+    function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
     function toggleSortTotal(col) { sortState.column = col; renderAllRankingsTable(); }
+    function showPlayerTotal(name) { const pData = playerSeasonData.filter(p => p.name === name); const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); }); const apSum = tot.g + tot.a, sT = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0, cR = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00"; document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${sT}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>` + (isGK ? `<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${cR})</div></div>` : ""); document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex'; }
+
+    function initFilters() {
+        const tY = [...new Set(rawData.map(m => (m.date || "").substring(0,4)))].sort(); const yS = document.getElementById('select-year'); if(yS) { yS.innerHTML = '<option value="">전체 시즌</option>'; tY.forEach(y => yS.add(new Option(y + " 시즌", y))); }
+        const mgrs = [...new Set(rawData.map(m => m.bfcmanager || m.bfc_manager))].filter(Boolean).sort(); const mS = document.getElementById('select-manager'); if(mS) { mS.innerHTML = '<option value="">모든 감독</option>'; mgrs.forEach(m => mS.add(new Option(m, m))); }
+        const pyS = document.getElementById('p-select-year'); if(pyS){ pyS.innerHTML = '<option value="">전체 시즌</option>'; [...new Set(playerSeasonData.map(p => p.season))].sort().forEach(y => pyS.add(new Option(y + " 시즌", y))); }
+    }
+
+    function showSuggestions(input, type) {
+        const v = input.value.trim(); const rL = input.nextElementSibling; if (!v) { rL.style.display = 'none'; return; }
+        let suggestions = []; if (type === 'opponentName') { suggestions = [...new Set(rawData.map(m => (m.hometeam||"").includes("부천") ? m.awayteam : m.hometeam))].filter(item => item && !item.includes("부천") && item.includes(v)); } else if (type === 'playerName') { suggestions = [...new Set(playerSeasonData.map(p => p.name))].filter(name => name.includes(v)); } else { suggestions = [...new Set(rawData.map(m => m[type] || ""))].filter(item => item && item.includes(v)); }
+        if (suggestions.length > 0) { rL.innerHTML = suggestions.slice(0, 10).map(item => `<li onclick="selectSuggestion('${input.id}', '${item}', '${type}')">${item}</li>`).join(''); rL.style.display = 'block'; } else rL.style.display = 'none';
+    }
+
+    function selectSuggestion(inputId, value, type) { const input = document.getElementById(inputId); if(input) { input.value = value; input.nextElementSibling.style.display = 'none'; if (type === 'playerName') { selectedPlayerSearchName = value; } else if (type === 'opponentName') { currentFilter.opponent = getUnifiedTeamName(value); } updateView(); } }
+    function toggleSort(col) { if(col === sortState.column) { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } else { sortState.column = col; sortState.direction = 'desc'; } updateView(); }
+    function filterByOpponent(name) { if(name.includes("부천")) return; currentFilter.opponent = getUnifiedTeamName(name); updateView(); } 
+    function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
+    function toggleSubLeagues() { const subs = document.querySelectorAll('input[name="p-league"]'); document.getElementById('check-all').checked = Array.from(subs).every(cb => cb.checked); updateView(); }
+    function toggleAllLeagues(el) { document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = el.checked); updateView(); }
+    function toggleSortOnlyDesc(col) { sortState.column = col; sortState.direction = 'desc'; updateView(); }
+
+    function resetToAll() { 
+        currentFilter = { opponent: null, stadium: null, type: null }; selectedPlayerSearchName = ""; isTotalRankMode = false; sortState = { column: 'date', direction: 'desc' };
+        ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
+        ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
+        if(document.getElementById('check-all')) document.getElementById('check-all').checked = true;
+        document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = true);
+        
+        // 필터 및 안내 복구
+        document.getElementById('team-filter-1').style.display = 'grid';
+        document.getElementById('team-filter-2').style.display = 'grid';
+        document.getElementById('team-notice').style.display = 'block';
+        
+        document.getElementById('dynamic-header').style.display='none'; 
+        document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
+        document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
+        document.getElementById('mode-t').className = currentMode === 'team' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('mode-p').className = currentMode === 'player' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('mode-h').className = 'mode-btn history-btn';
+        if(document.getElementById('btn-away-fan')) document.getElementById('btn-away-fan').className = 'away-btn';
+        const pP = document.getElementById('player-ranking-panel'); if(pP) pP.style.display = currentMode === 'player' ? "block" : "none";
+        updateView(); 
+    }
+    
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+    function formatSeasons(years) { if (!years || years.length === 0) return ""; const nums = years.map(Number).sort((a, b) => a - b); let res = []; let s = nums[0], e = nums[0]; for (let i = 1; i <= nums.length; i++) { if (i < nums.length && nums[i] === e + 1) e = nums[i]; else { res.push(s === e ? String(s) : `${s}~${String(e).slice(-2)}`); if (i < nums.length) { s = nums[i]; e = nums[i]; } } } return res.join(', '); }
     window.onload = loadData;
 </script>
 </body>
