@@ -207,9 +207,13 @@
         return mapping[n] || n;
     }
 
-    function getParticle(name) {
-        if(!name) return ""; const charCode = name.charCodeAt(name.length - 1);
-        const hasBatchim = (charCode - 0xAC00) % 28 > 0; return hasBatchim ? "과의" : "와의";
+    // [중요] 조사를 상황에 맞게 반환하는 필수 헬퍼 함수
+    function getWithParticle(name, isResult = false) {
+        if(!name) return "";
+        const charCode = name.charCodeAt(name.length - 1);
+        const hasBatchim = (charCode - 0xAC00) % 28 > 0;
+        if (isResult) return hasBatchim ? "과의" : "와의";
+        return hasBatchim ? "과" : "와";
     }
 
     function fixAllTimeStats() {
@@ -268,6 +272,7 @@
         
         let filtered = [];
 
+        // 1. TODAY'S HISTORY 모드
         if (currentFilter.type === 'opening_match') {
             header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
             const yearGroups = {};
@@ -281,19 +286,50 @@
                 return true;
             });
         } 
+        // 2. 원정팬 조회 모드
         else if (currentFilter.type === 'away_fan') {
-            header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 원정경기에 함께한 원정관중 기록 (2023-2026)`;
+            header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 원정경기에 함께한 원정관중 기록`;
             filtered = rawData.filter(m => {
                 const isAway = !(m.hometeam || "").includes("부천");
-                const yr = parseInt(m.date.substring(0,4));
-                return isAway && yr >= 2023;
+                return isAway && parseInt(m.date.substring(0,4)) >= 2023;
             });
         }
+        // 3. 일반 조회 모드 (동적 타이틀 복원 핵심 로직)
         else {
-            if (currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef) {
-                header.style.display = "flex"; const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent); 
-                titleEl.innerText = `🔍 ${tOpp ? tOpp + getParticle(tOpp) + ' ' : ''}조회 결과`;
-            } else header.style.display = "none";
+            const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef;
+            if (hasFilter) {
+                header.style.display = "flex";
+                const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent);
+                const stadium = currentFilter.stadium;
+                const league = selLg;
+                const manager = mgr;
+                const referee = sRef;
+
+                let titleStr = "";
+
+                if (referee) {
+                    titleStr = `${referee} 주심이 진행한 경기 결과`;
+                } else if (stadium && tOpp && manager) {
+                    titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp)} ${manager} 감독의 경기 결과`;
+                } else if (stadium && tOpp) {
+                    titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp, true)} 경기 결과`;
+                } else if (tOpp && manager) {
+                    titleStr = `${tOpp}${getWithParticle(tOpp)} ${manager} 감독의 경기 결과`;
+                } else if (tOpp) {
+                    titleStr = `${tOpp}${getWithParticle(tOpp, true)} 경기 결과`;
+                } else if (manager && league) {
+                    titleStr = `${manager} 감독의 ${league} 경기 결과`;
+                } else if (manager) {
+                    titleStr = `${manager} 감독의 경기 결과`;
+                } else {
+                    titleStr = "조회 결과";
+                }
+                
+                titleEl.innerText = `🔍 ${titleStr}${year ? ` (${year}시즌)` : ""}`;
+            } else {
+                header.style.display = "none";
+            }
+
             filtered = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppRaw = isH ? a : h;
                 const oppUnified = getUnifiedTeamName(oppRaw);
@@ -309,10 +345,11 @@
             });
         }
 
+        // 결과 요약 출력 (v21.1 로직 유지)
         let tw=0, td=0, tl=0, tgf=0, tga=0; 
         filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
+        
         if(header.style.display !== "none") {
-            // [수정] 원정팬 조회 모드일 때만 별도의 안내 문구 출력
             if (currentFilter.type === 'away_fan') {
                 summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
             } else {
@@ -320,6 +357,8 @@
             }
             summary.style.display = 'block';
         }
+
+        // 이후 테이블 렌더링 로직 생략 (v21.1과 동일)
 
         let dData = [...filtered].sort((a,b) => {
             let vA = a[sortState.column], vB = b[sortState.column];
@@ -431,5 +470,6 @@
 </script>
 </body>
 </html>
+
 
 
