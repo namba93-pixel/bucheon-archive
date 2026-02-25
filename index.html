@@ -459,7 +459,7 @@
     function filterByOpponent(name) { if(name.includes("부천")) return; currentFilter.opponent = getUnifiedTeamName(name); updateView(); } 
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     function toggleSubLeagues() { const subs = document.querySelectorAll('input[name="p-league"]'); document.getElementById('check-all').checked = Array.from(subs).every(cb => cb.checked); updateView(); }
-    function toggleAllLeagues(el) { document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = el.checked); updateView(); }
+    
     function toggleSortOnlyDesc(col) { sortState.column = col; sortState.direction = 'desc'; updateView(); }
 
     function resetToAll() { 
@@ -491,11 +491,38 @@
         updateView(); 
     }
     
+    // 하위 체크박스 변경 시 실행 (개별 대회 선택 시)
+    function updateSubLeagues() {
+    const subs = document.querySelectorAll('input[name="p-league"]');
+    const allCheck = document.getElementById('check-all');
+    
+    // 모든 하위 체크박스가 체크되어 있는지 확인하여 '전체선택' 상태 결정
+    if (allCheck) {
+        allCheck.checked = Array.from(subs).every(cb => cb.checked);
+    }
+
+    // '전체선택' 체크박스 클릭 시 실행
+    function toggleAllLeagues(el) {
+    const subs = document.querySelectorAll('input[name="p-league"]');
+    
+    // 전체선택 체크박스의 상태를 모든 하위 체크박스에 동일하게 적용
+    subs.forEach(cb => {
+        cb.checked = el.checked;
+    });
+    
+    // [중요] 즉시 화면 갱신
+    updateView();
+}     
+    
+    // [중요] 체크 상태가 바뀌었으므로 즉시 화면 갱신
+    updateView(); 
+}
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
     function formatSeasons(years) { if (!years || years.length === 0) return ""; const nums = years.map(Number).sort((a, b) => a - b); let res = []; let s = nums[0], e = nums[0]; for (let i = 1; i <= nums.length; i++) { if (i < nums.length && nums[i] === e + 1) e = nums[i]; else { res.push(s === e ? String(s) : `${s}~${String(e).slice(-2)}`); if (i < nums.length) { s = nums[i]; e = nums[i]; } } } return res.join(', '); }
     window.onload = loadData;
 </script>
 </body>
 </html>
+
 
 
