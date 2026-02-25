@@ -99,6 +99,11 @@
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력(선택 조회)" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 성함 입력(선택 조회)" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
         </div>
+        <div class="data-notice">
+        <b>💡 데이터 안내</b><br>
+        • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 기준으로 제공하고 있습니다. <br>
+        • 현재 대한축구협회 홈페이지 등에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부가 누락되어 있습니다.
+    </div>
     </div>
     <div id="player-section" style="display: none;">
         <div class="ranking-container">
@@ -124,17 +129,18 @@
                     <label><input type="checkbox" name="p-league" value="코리아컵" checked onchange="updateSubLeagues()"> 코리아컵</label>
                 </div>
             </div>
-        </div>
+                <div class="data-notice">
+        <b>💡 데이터 안내</b><br>
+        • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
+        • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다.           
     </div>
+        </div>
+        
+    </div>
+    
     <div id="dynamic-header" class="view-header"><div style="display:flex; justify-content:space-between; align-items:center;"><div id="dynamic-title" style="font-weight:bold; font-size:1.1rem;"></div><button class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem;" onclick="resetToAll()">이전 결과로 돌아가기</button></div><div id="dynamic-summary" class="view-summary"></div></div>
     <div class="results-box"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
     
-    <div class="data-notice">
-        <b>💡 데이터 안내</b><br>
-        • 본 아카이브는 2007년 창단 이후 부천FC1995의 모든 공식 경기(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 기준으로 제공하고 있습니다. <br>
-        • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
-        • 현재 대한축구협회 홈페이지 등에서 제공되지 않는 일부 과거 데이터가 누락되어 있습니다.
-    </div>
 </div>
 <footer><p>© 2026 남성현. All Rights Reserved.</p></footer>
 <script>
@@ -407,3 +413,4 @@
 </script>
 </body>
 </html>
+
