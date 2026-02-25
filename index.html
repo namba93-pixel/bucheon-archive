@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>부천FC1995 데이터 포털L</title>
+    <title>부천FC1995 데이터 포털</title>
     <style>
         :root { --bfc-red: #ed1c24; --bfc-black: #1a1a1a; --bg-gray: #f4f4f4; }
         body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg-gray); color: #333; display: flex; flex-direction: column; min-height: 100vh; }
@@ -66,7 +66,7 @@
     </div>
 </div>
 <header>
-    <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 DATA PORTAL</h1></a>
+    <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 데이터 포털</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
         <span>통산</span><span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
@@ -82,7 +82,7 @@
     <div id="team-section">
         <div class="filter-container">
             <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
-            <div class="filter-item"><label>홈/원정 경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
+            <div class="filter-item"><label>홈/원정경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
             <div class="filter-item">
                 <label>대회별 조회</label>
@@ -137,8 +137,7 @@
         </div>
         <div class="data-notice">
             <b>💡 데이터 안내</b><br>
-            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다.<br>
-            • 동명이인 선수의 경우, 입단이 빠른 순서대로 숫자를 부여하였습니다.<br>
+            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
             • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다.
         </div>
     </div>
@@ -232,20 +231,14 @@
         updateView();
     }
 
-    // [보정] TODAY'S HISTORY 클릭 시 강제로 '팀 경기 기록'의 레이아웃을 사용하도록 수정
     function showHistorySection() {
-        resetToAll(); // 기존 필터 초기화
+        resetToAll(); 
         currentFilter.type = 'opening_match'; 
-        
-        // 레이아웃 스위칭 (팀 섹션 활성화)
         document.getElementById('team-section').style.display = 'block';
         document.getElementById('player-section').style.display = 'none';
-        
-        // 버튼 상태 업데이트
         document.getElementById('mode-h').className = 'mode-btn history-btn active';
-        document.getElementById('mode-t').className = 'mode-btn'; // 팀 버튼 비활성
-        document.getElementById('mode-p').className = 'mode-btn'; // 선수 버튼 비활성
-        
+        document.getElementById('mode-t').className = 'mode-btn';
+        document.getElementById('mode-p').className = 'mode-btn';
         updateView();
     }
 
@@ -272,6 +265,8 @@
                 const isH = (m.hometeam || "").includes("부천");
                 if (loc && (loc === 'home' ? !isH : isH)) return false;
                 if (mgr && (m.bfcmanager || m.bfc_manager || "") !== mgr) return false;
+                if (year && !m.date.startsWith(year)) return false;
+                if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false;
                 return true;
             });
         } else {
@@ -393,27 +388,18 @@
     function filterByOpponent(name) { if(name.includes("부천")) return; currentFilter.opponent = getUnifiedTeamName(name); updateView(); } 
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     
-    // [보정] 돌아가기 버튼 클릭 시 현재 모드(team/player)를 유지하며 메인으로 복귀
     function resetToAll() { 
-        // 1. 공통 필터 초기화
         currentFilter = { opponent: null, stadium: null, type: null }; 
-        selectedPlayerSearchName = ""; 
-        isTotalRankMode = false; 
-        
-        // 2. 검색창 텍스트 및 셀렉트박스 초기화
+        selectedPlayerSearchName = ""; isTotalRankMode = false; 
         ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
         ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
         if(document.getElementById('check-all')){document.getElementById('check-all').checked=true; updateSubLeagues();} 
-        
-        // 3. 헤더 숨김
         document.getElementById('dynamic-header').style.display='none'; 
-        
-        // 4. 모드에 따른 레이아웃 복구
-        const pPanel = document.getElementById('player-ranking-panel');
+        const panel = document.getElementById('player-ranking-panel');
         if (currentMode === 'player') {
             document.getElementById('team-section').style.display = 'none';
             document.getElementById('player-section').style.display = 'block';
-            if(pPanel) pPanel.style.display = "block";
+            if(panel) panel.style.display = "block";
             document.getElementById('mode-p').className = 'mode-btn active';
             document.getElementById('mode-t').className = 'mode-btn';
         } else {
@@ -422,8 +408,7 @@
             document.getElementById('mode-t').className = 'mode-btn active';
             document.getElementById('mode-p').className = 'mode-btn';
         }
-        
-        document.getElementById('mode-h').className = 'mode-btn history-btn'; // 히스토리 버튼은 항상 해제
+        document.getElementById('mode-h').className = 'mode-btn history-btn'; 
         updateView(); 
     }
     
