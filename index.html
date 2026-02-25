@@ -67,8 +67,8 @@
     <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 공식경기 아카이브</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
-        <span>통산<span id="stat-total">0경기</span></span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
-        <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률<span id="stat-rate">0%</span></span>
+        <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
+        <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
     </div>
 </header>
 <div class="mode-switch">
@@ -127,9 +127,9 @@
     
     <div class="data-notice">
         <b>💡 데이터 안내</b><br>
-        • 본 아카이브는 2008년 창단 이후 부천FC1995의 모든 공식 경기(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 바탕으로 산출되었습니다. <br>
+        • 본 아카이브는 2007년 창단 이후 부천FC1995의 모든 공식 경기(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 바탕으로 제공하고 있습니다. <br>
         • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
-        • 일부 과거 데이터는 현재 대한축구협회 홈페이지 등에서 제공되지 않아 누락되어 있습니다.
+        • 일부 과거 데이터는 대한축구협회 홈페이지에서 제공되지 않아 누락되어 있습니다.
     </div>
 </div>
 <footer><p>© 2026 남성현. All Rights Reserved.</p></footer>
@@ -304,7 +304,8 @@
             const isAll = totalLeagues.every(lg => shownLeagues.includes(lg));
             let sumText = shownLeagues.length === 1 ? shownLeagues[0] : (isAll ? "전체 시즌" : "일부 대회");
             let dHtml = shownLeagues.length > 1 ? Object.entries(p.details).sort(([,a],[,b])=>b.m-a.m).map(([lgN, d]) => `<tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;"><td style="border:none;"></td><td style="border:none;"></td><td style="text-align:left; padding-left:20px;">└ ${lgN}</td><td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${(parseInt(d.g)||0) + (parseInt(d.a)||0)}</td><td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td><td>${d.rc}</td></tr>`).join('') : "";
-            return `<tr style="${shownLeagues.length > 1 ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${sumText}</td><td style="font-weight:bold;">${p.match}</td><td style="font-weight:bold;">${p.goal}</td><td style="font-weight:bold;">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}" style="font-weight:bold;">${(parseInt(p.goal)||0) + (parseInt(p.assist)||0)}</td><td>${p.pk}</td><td>${p.cs}</td><td>${p.yc}</td><td>${p.rc}</td></tr>` + dHtml;
+            // [수정] 모든 주요 지표 정렬 시 빨간색 하이라이트 적용
+            return `<tr style="${shownLeagues.length > 1 ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${sumText}</td><td class="${sortState.column==='match'?'highlight-red':''}" style="font-weight:bold;">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}" style="font-weight:bold;">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}" style="font-weight:bold;">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}" style="font-weight:bold;">${(parseInt(p.goal)||0) + (parseInt(p.assist)||0)}</td><td class="${sortState.column==='pk'?'highlight-red':''}">${p.pk}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td class="${sortState.column==='yc'?'highlight-red':''}">${p.yc}</td><td class="${sortState.column==='rc'?'highlight-red':''}">${p.rc}</td></tr>` + dHtml;
         }).join('');
     }
 
@@ -376,7 +377,7 @@
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     function resetToAll() { currentFilter = { opponent: null, stadium: null }; isTotalRankMode = false; ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); if(document.getElementById('check-all')){document.getElementById('check-all').checked=true; updateSubLeagues();} document.getElementById('dynamic-header').style.display='none'; updateView(); }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-    function formatSeasons(years) { years.sort((a,b)=>a-b); let res=[]; let s=years[0], e=years[0]; for(let i=1;i<=years.length;i++){ if(i<years.length && parseInt(years[i])===parseInt(e)+1) e=years[i]; else { res.push(s===e?s:`${s}~${String(e).slice(-2)}`); if(i<years.length){s=years[i]; e=years[i];} } } return res.join(', '); }
+    function formatSeasons(years) { years.sort((a,b)=>a-b); let res=[]; let s=years[0], e=years[0]; for(let i=1;i<=years.length;i++){ if(i<years.length && parseInt(years[i])===parseInt(e)+1) e=years[i]; else { res.push(s===e?s:`${s}~${String(e).slice(-2)}`); if(i<years.length){start=years[i]; end=years[i];} } } return res.join(', '); }
     window.onload = loadData;
 </script>
 </body>
