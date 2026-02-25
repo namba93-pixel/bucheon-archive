@@ -80,7 +80,18 @@
             <div class="filter-item"><label>시즌별</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
             <div class="filter-item"><label>홈/원정</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
-            <div class="filter-item"><label>대회별 조회</label><select id="select-league" onchange="updateView()"><option value="">모든 대회</option><option value="K리그1">K리그1</option><option value="K리그2">K리그2</option><option value="K3리그">K3리그</option><option value="플레이오프">플레이오프</option><option value="코리아컵">코리아컵</option><option value="챌린저스컵">챌린저스컵</option></select></div>
+            <div class="filter-item">
+                <label>대회별 조회</label>
+                <select id="select-league" onchange="updateView()">
+                    <option value="">모든 대회</option>
+                    <option value="K리그1">K리그1</option>
+                    <option value="K리그2">K리그2</option>
+                    <option value="K3리그">K3리그</option>
+                    <option value="플레이오프">플레이오프</option>
+                    <option value="코리아컵">코리아컵</option>
+                    <option value="챌린저스컵">챌린저스컵</option>
+                </select>
+            </div>
         </div>
         <div class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(3, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력(선택 조회)" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
@@ -134,6 +145,22 @@
         });
     }
 
+    function getUnifiedTeamName(name) {
+        if (!name) return "";
+        const map = {
+            "상주 상무": "상무 축구단", "김천 상무": "상무 축구단",
+            "아산 유나이티드": "아산 시민축구단", "아산 시민축구단": "아산 시민축구단",
+            "천안시청": "천안시티FC", "천안시티FC": "천안시티FC",
+            "화성 신우전자": "신우전자 축구단", "삼척 신우전자": "신우전자 축구단",
+            "고양 Hi FC": "고양 자이크로", "고양 자이크로": "고양 자이크로",
+            "경찰 축구단": "경찰 축구단", "안산 무궁화": "경찰 축구단", "아산 무궁화": "경찰 축구단",
+            "대전 시티즌": "대전 하나시티즌", "대전 하나시티즌": "대전 하나시티즌",
+            "제주 SK": "SK 축구단", "제주 유나이티드": "SK 축구단", 
+        };
+        return map[name] || name;
+    }
+
+
     function getUnifiedLeagueName(n) { 
         if(!n) return ""; const l = n.toLowerCase();
         if(l.includes("플레이오프") || l.includes("준플레이오프") || l.includes("승강")) return "플레이오프";
@@ -170,7 +197,7 @@
         document.getElementById('player-section').style.display = m === 'player' ? 'block' : 'none';
         document.getElementById('mode-t').className = (m === 'team' ? 'mode-btn active' : 'mode-btn');
         document.getElementById('mode-p').className = (m === 'player' ? 'mode-btn active' : 'mode-btn');
-        sortState = m === 'player' ? { column: 'match', direction: 'desc' } : { column: 'date', direction: 'desc' };
+        sortState = m === 'player' ? { column: 'season', direction: 'desc' } : { column: 'date', direction: 'desc' };
         updateView();
     }
 
@@ -187,7 +214,6 @@
             else { if (currentFilter.stadium) tp.push(`${currentFilter.stadium}에서`); if (tOpp) tp.push(`${tOpp}${getParticle(tOpp)} 경기결과`); else if (sOppMgr) tp.push(`${sOppMgr} 감독과의 경기결과`); else if (sRef) tp.push(`${sRef} 주심이 진행한 경기결과`); else if (mgr) tp.push(`${mgr} 감독의 경기결과`); else tp.push("조회 결과"); }
             if (year) tp.push(`(${year}시즌)`); titleEl.innerText = `🔍 ${tp.join(" ")}`;
             
-            // [보정] 팀 기록 요약 정보 출력
             let filtered = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = isH ? a : h;
                 if (currentFilter.opponent && opp !== currentFilter.opponent) return false;
@@ -215,24 +241,34 @@
         document.getElementById('table-body').innerHTML = dData.map(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; }).join('');
     }
 
+    // [보정] 선수기록 조회 정렬 로직 (시즌 양방향 / 기타 최다순 고정 / 퇴장 표시)
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value, nameSearch = document.getElementById('p-search-name').value, selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
-        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSort('match')">경기 ↕</th><th onclick="toggleSort('goal')">득점 ↕</th><th onclick="toggleSort('assist')">도움 ↕</th><th onclick="toggleSort('ap')">포인트 ↕</th><th>PK</th><th>CS</th><th>경고</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('season')">시즌 ↕</th><th>이름</th><th>대회</th><th onclick="toggleSortOnlyDesc('match')">경기 ↕</th><th onclick="toggleSortOnlyDesc('goal')">득점 ↕</th><th onclick="toggleSortOnlyDesc('assist')">도움 ↕</th><th onclick="toggleSortOnlyDesc('ap')">포인트 ↕</th><th onclick="toggleSortOnlyDesc('pk')">PK ↕</th><th onclick="toggleSortOnlyDesc('cs')">클린시트 ↕</th><th onclick="toggleSortOnlyDesc('yc')">경고 ↕</th><th onclick="toggleSortOnlyDesc('rc')">퇴장 ↕</th></tr>`;
+        
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!nameSearch || p.name.includes(nameSearch)) && selectedLeagues.includes(getUnifiedLeagueName(p.league)));
         const grouped = {};
         filtered.forEach(p => {
-            const key = `${p.name}_${p.season}`; if (!grouped[key]) grouped[key] = { name: p.name, season: p.season, match: 0, goal: 0, assist: 0, pk: 0, cs: 0, yc: 0, details: {} };
-            const uniLg = getUnifiedLeagueName(p.league); if (!grouped[key].details[uniLg]) grouped[key].details[uniLg] = { m: 0, g: 0, a: 0, pk: 0, cs: 0, yc: 0 };
-            grouped[key].match += parseInt(p.match)||0; grouped[key].goal += parseInt(p.goal)||0; grouped[key].assist += parseInt(p.assist)||0; grouped[key].pk += parseInt(p.pk)||0; grouped[key].cs += parseInt(p.cleansheet)||0; grouped[key].yc += parseInt(p.yc)||0;
-            grouped[key].details[uniLg].m += parseInt(p.match)||0; grouped[key].details[uniLg].g += parseInt(p.goal)||0; grouped[key].details[uniLg].a += parseInt(p.assist)||0; grouped[key].details[uniLg].pk += parseInt(p.pk)||0; grouped[key].details[uniLg].cs += parseInt(p.cleansheet)||0; grouped[key].details[uniLg].yc += parseInt(p.yc)||0;
+            const key = `${p.name}_${p.season}`; if (!grouped[key]) grouped[key] = { name: p.name, season: p.season, match: 0, goal: 0, assist: 0, pk: 0, cs: 0, yc: 0, rc: 0, details: {} };
+            const uniLg = getUnifiedLeagueName(p.league); if (!grouped[key].details[uniLg]) grouped[key].details[uniLg] = { m: 0, g: 0, a: 0, pk: 0, cs: 0, yc: 0, rc: 0 };
+            grouped[key].match += parseInt(p.match)||0; grouped[key].goal += parseInt(p.goal)||0; grouped[key].assist += parseInt(p.assist)||0; grouped[key].pk += parseInt(p.pk)||0; grouped[key].cs += parseInt(p.cleansheet)||0; grouped[key].yc += parseInt(p.yc)||0; grouped[key].rc += parseInt(p.rc)||0;
+            grouped[key].details[uniLg].m += parseInt(p.match)||0; grouped[key].details[uniLg].g += parseInt(p.goal)||0; grouped[key].details[uniLg].a += parseInt(p.assist)||0; grouped[key].details[uniLg].pk += parseInt(p.pk)||0; grouped[key].details[uniLg].cs += parseInt(p.cleansheet)||0; grouped[key].details[uniLg].yc += parseInt(p.yc)||0; grouped[key].details[uniLg].rc += parseInt(p.rc)||0;
         });
-        let dData = Object.values(grouped).sort((a,b) => { let vA = sortState.column === 'ap' ? (parseInt(a.goal)||0) + (parseInt(a.assist)||0) : a[sortState.column], vB = sortState.column === 'ap' ? (parseInt(b.goal)||0) + (parseInt(b.assist)||0) : b[sortState.column]; return sortState.direction === 'asc' ? vA - vB : vB - vA; });
+        
+        let dData = Object.values(grouped).sort((a,b) => {
+            if(sortState.column === 'season') { return sortState.direction === 'asc' ? a.season - b.season : b.season - a.season; }
+            let vA = sortState.column === 'ap' ? (parseInt(a.goal)||0) + (parseInt(a.assist)||0) : a[sortState.column], vB = sortState.column === 'ap' ? (parseInt(b.goal)||0) + (parseInt(b.assist)||0) : b[sortState.column];
+            return vB - vA; // 시즌 제외 나머지 항목 내림차순(최다순) 고정
+        });
+
         document.getElementById('table-body').innerHTML = dData.map(p => {
             const hasM = Object.keys(p.details).length > 1;
-            let dHtml = hasM ? Object.entries(p.details).sort(([,a],[,b])=>b.m-a.m).map(([lgN, d]) => `<tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;"><td style="border:none;"></td><td style="border:none;"></td><td style="text-align:left; padding-left:20px;">└ ${lgN}</td><td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${(parseInt(d.g)||0) + (parseInt(d.a)||0)}</td><td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td></tr>`).join('') : "";
-            return `<tr style="${hasM ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${hasM ? '전체 시즌' : Object.keys(p.details)[0]}</td><td style="font-weight:bold;">${p.match}</td><td style="font-weight:bold;">${p.goal}</td><td style="font-weight:bold;">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}" style="font-weight:bold;">${(parseInt(p.goal)||0) + (parseInt(p.assist)||0)}</td><td>${p.pk}</td><td>${p.cs}</td><td>${p.yc}</td></tr>` + dHtml;
+            let dHtml = hasM ? Object.entries(p.details).sort(([,a],[,b])=>b.m-a.m).map(([lgN, d]) => `<tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;"><td style="border:none;"></td><td style="border:none;"></td><td style="text-align:left; padding-left:20px;">└ ${lgN}</td><td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${(parseInt(d.g)||0) + (parseInt(d.a)||0)}</td><td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td><td>${d.rc}</td></tr>`).join('') : "";
+            return `<tr style="${hasM ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${hasM ? '전체 시즌' : Object.keys(p.details)[0]}</td><td style="font-weight:bold;">${p.match}</td><td style="font-weight:bold;">${p.goal}</td><td style="font-weight:bold;">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}" style="font-weight:bold;">${(parseInt(p.goal)||0) + (parseInt(p.assist)||0)}</td><td>${p.pk}</td><td>${p.cs}</td><td>${p.yc}</td><td>${p.rc}</td></tr>` + dHtml;
         }).join('');
     }
+
+    function toggleSortOnlyDesc(col) { sortState.column = col; sortState.direction = 'desc'; updateView(); }
 
     function calculateTotalRankings() {
         const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0 }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; });
@@ -243,20 +279,15 @@
         }; r('rank-match', 'match', '경기'); r('rank-goal', 'goal', '골'); r('rank-ap', 'ap', 'pt'); r('rank-cs', 'cs', '회');
     }
 
-    // [보정] 랭킹 조회 시 이전 경기 요약 정보 숨김 및 타이틀 통일
     function showAllRankings(col) {
         isTotalRankMode = true; sortState = { column: col, direction: 'desc' };
         const h = document.getElementById('dynamic-header'), tEl = document.getElementById('dynamic-title'), sum = document.getElementById('dynamic-summary');
-        if (h && tEl) { 
-            h.style.display = "flex"; 
-            tEl.innerText = `🏆 통산기록 랭킹 조회`; // 요청하신 명칭으로 통일
-            if(sum) sum.style.display = 'none'; // 경기 전적 요약 숨김
-        }
+        if (h && tEl) { h.style.display = "flex"; tEl.innerText = `🏆 통산기록 랭킹 조회`; if(sum) sum.style.display = 'none'; }
         renderAllRankingsTable();
     }
 
     function renderAllRankingsTable() {
-        document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">CS ↕</th><th>소속시즌</th></tr>`;
+        document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`;
         const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); });
         let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]);
         document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join('');
@@ -286,7 +317,7 @@
     }
 
     function selectSuggestion(inputId, value) { const input = document.getElementById(inputId); if(input) { input.value = value; input.nextElementSibling.style.display = 'none'; updateView(); } }
-    function toggleSort(col) { sortState.column = col; sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; updateView(); }
+    function toggleSort(col) { if(col === sortState.column) { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } else { sortState.column = col; sortState.direction = 'desc'; } updateView(); }
     function toggleAllLeagues(el) { document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = el.checked); updateView(); }
     function filterByOpponent(name) { currentFilter.opponent = name; updateView(); }
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
