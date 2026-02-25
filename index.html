@@ -51,6 +51,7 @@
         .stat-label { font-size: 0.85rem; color: #888; font-weight: 500; }
         .stat-value { font-size: 1.3rem; font-weight: 800; color: var(--bfc-red); }
         .rate-small { font-size: 0.75rem; color: #666; font-weight: 400; margin-top: -4px; }
+        .data-notice { margin-top: 30px; padding: 20px; background: #fff; border-radius: 15px; border-left: 5px solid #ccc; font-size: 0.8rem; color: #777; line-height: 1.6; }
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; }
         @media (max-width: 1000px) { .ranking-container { grid-template-columns: repeat(2, 1fr); } }
     </style>
@@ -66,8 +67,8 @@
     <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 공식경기 아카이브</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
-        <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
-        <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
+        <span>통산<span id="stat-total">0경기</span></span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
+        <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률<span id="stat-rate">0%</span></span>
     </div>
 </header>
 <div class="mode-switch">
@@ -123,6 +124,13 @@
     </div>
     <div id="dynamic-header" class="view-header"><div style="display:flex; justify-content:space-between; align-items:center;"><div id="dynamic-title" style="font-weight:bold; font-size:1.1rem;"></div><button class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem;" onclick="resetToAll()">이전 결과로 돌아가기</button></div><div id="dynamic-summary" class="view-summary"></div></div>
     <div class="results-box"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+    
+    <div class="data-notice">
+        <b>💡 데이터 안내</b><br>
+        • 본 아카이브는 2008년 창단 이후 부천FC1995의 모든 공식 경기(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 바탕으로 산출되었습니다. <br>
+        • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
+        • 일부 과거 데이터는 현재 대한축구협회 홈페이지 등에서 제공되지 않아 누락되어 있습니다.
+    </div>
 </div>
 <footer><p>© 2026 남성현. All Rights Reserved.</p></footer>
 <script>
@@ -350,18 +358,18 @@
             let team;
             if (type === 'opponentName') {
                 const isH = (m.hometeam || "").includes("부천");
-                team = isH ? m.awayteam : m.hometeam; // [수정] 우리팀(부천) 명칭 제외 로직 보강
+                team = isH ? m.awayteam : m.hometeam; 
             }
             else team = m[type] || "";
             return team; 
-        }))].filter(item => item && !item.includes("부천") && item.includes(v)).slice(0, 10); // [수정] 부천 제외 필터링 추가
+        }))].filter(item => item && !item.includes("부천") && item.includes(v)).slice(0, 10); 
         if (s.length > 0) { rL.innerHTML = s.map(item => `<li onclick="selectSuggestion('${input.id}', '${item}')">${item}</li>`).join(''); rL.style.display = 'block'; } else rL.style.display = 'none';
     }
 
     function selectSuggestion(inputId, value) { const input = document.getElementById(inputId); if(input) { input.value = value; input.nextElementSibling.style.display = 'none'; updateView(); } }
     function toggleSort(col) { if(col === sortState.column) { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } else { sortState.column = col; sortState.direction = 'desc'; } updateView(); }
     function filterByOpponent(name) { 
-        if(name.includes("부천")) return; // 부천 클릭 방지
+        if(name.includes("부천")) return; 
         currentFilter.opponent = getUnifiedTeamName(name); 
         updateView(); 
     } 
