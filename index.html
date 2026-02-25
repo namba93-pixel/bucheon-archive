@@ -164,7 +164,6 @@
         if(l.includes("fa컵") || l.includes("코리아컵")) return "코리아컵"; return n; 
     }
 
-    // [수정] 성현님께서 지정하신 팀들만 정확히 통합하도록 로직 고정
     function getUnifiedTeamName(n) {
         if(!n) return "";
         const mapping = {
@@ -233,10 +232,11 @@
             if (year) tp.push(`(${year}시즌)`); titleEl.innerText = `🔍 ${tp.join(" ")}`;
             
             let filteredSummary = rawData.filter(m => {
-                const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = getUnifiedTeamName(isH ? a : h);
-                if (currentFilter.opponent && opp !== getUnifiedTeamName(currentFilter.opponent)) return false;
+                const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppRaw = isH ? a : h;
+                const oppUnified = getUnifiedTeamName(oppRaw);
+                if (currentFilter.opponent && oppUnified !== getUnifiedTeamName(currentFilter.opponent)) return false;
                 if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
-                if (sOpp && !opp.includes(getUnifiedTeamName(sOpp))) return false; 
+                if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp))) return false; 
                 if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; 
                 if (sRef && !(m.referee || "").includes(sRef)) return false;
                 if (year && !(m.date || "").startsWith(year)) return false; 
@@ -245,16 +245,17 @@
                 if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
             });
             let tw=0, td=0, tl=0, tgf=0, tga=0; 
-            filteredSummary.forEach(m => { const isH = (m.hometeam || ""), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH.includes("부천") ? hS : aS, opS = isH.includes("부천") ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
+            filteredSummary.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
             summary.innerHTML = `조회 결과: <span>${filteredSummary.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
             summary.style.display = 'block';
         } else header.style.display = "none";
 
         let filtered = rawData.filter(m => {
-            const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), opp = getUnifiedTeamName(isH ? a : h);
-            if (currentFilter.opponent && opp !== getUnifiedTeamName(currentFilter.opponent)) return false;
+            const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppRaw = isH ? a : h;
+            const oppUnified = getUnifiedTeamName(oppRaw);
+            if (currentFilter.opponent && oppUnified !== getUnifiedTeamName(currentFilter.opponent)) return false;
             if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
-            if (sOpp && !opp.includes(getUnifiedTeamName(sOpp)) && !(isH?a:h).includes(sOpp)) return false; 
+            if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp)) && !oppRaw.includes(sOpp)) return false; 
             if (sOppMgr && !(m.opp_manager || "").includes(sOppMgr)) return false; 
             if (sRef && !(m.referee || "").includes(sRef)) return false;
             if (year && !(m.date || "").startsWith(year)) return false; 
@@ -268,7 +269,7 @@
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('attendance')">관중 ↕</th><th>감독</th></tr>`;
         document.getElementById('table-body').innerHTML = dData.map(m => { 
             const isH = (m.hometeam || ""), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH.includes("부천") ? hS : aS, opS = isH.includes("부천") ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); 
-            const displayOpponent = isH ? m.awayteam : m.hometeam;
+            const displayOpponent = isH.includes("부천") ? m.awayteam : m.hometeam;
             return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${(parseInt(String(m.attendance).replace(/,/g,''))||0).toLocaleString()}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; 
         }).join('');
     }
@@ -347,16 +348,23 @@
         const v = input.value.trim(); const rL = input.nextElementSibling; if (!v) { rL.style.display = 'none'; return; }
         const s = [...new Set(rawData.map(m => { 
             let team;
-            if (type === 'opponentName') team = (m.hometeam || "").includes("부천") ? (m.awayteam || "") : (m.hometeam || "");
+            if (type === 'opponentName') {
+                const isH = (m.hometeam || "").includes("부천");
+                team = isH ? m.awayteam : m.hometeam; // [수정] 우리팀(부천) 명칭 제외 로직 보강
+            }
             else team = m[type] || "";
             return team; 
-        }))].filter(item => item && item.includes(v)).slice(0, 10);
+        }))].filter(item => item && !item.includes("부천") && item.includes(v)).slice(0, 10); // [수정] 부천 제외 필터링 추가
         if (s.length > 0) { rL.innerHTML = s.map(item => `<li onclick="selectSuggestion('${input.id}', '${item}')">${item}</li>`).join(''); rL.style.display = 'block'; } else rL.style.display = 'none';
     }
 
     function selectSuggestion(inputId, value) { const input = document.getElementById(inputId); if(input) { input.value = value; input.nextElementSibling.style.display = 'none'; updateView(); } }
     function toggleSort(col) { if(col === sortState.column) { sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc'; } else { sortState.column = col; sortState.direction = 'desc'; } updateView(); }
-    function filterByOpponent(name) { currentFilter.opponent = getUnifiedTeamName(name); updateView(); } 
+    function filterByOpponent(name) { 
+        if(name.includes("부천")) return; // 부천 클릭 방지
+        currentFilter.opponent = getUnifiedTeamName(name); 
+        updateView(); 
+    } 
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     function resetToAll() { currentFilter = { opponent: null, stadium: null }; isTotalRankMode = false; ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); if(document.getElementById('check-all')){document.getElementById('check-all').checked=true; updateSubLeagues();} document.getElementById('dynamic-header').style.display='none'; updateView(); }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
