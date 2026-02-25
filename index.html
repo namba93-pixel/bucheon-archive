@@ -51,7 +51,7 @@
         .stat-label { font-size: 0.85rem; color: #888; font-weight: 500; }
         .stat-value { font-size: 1.3rem; font-weight: 800; color: var(--bfc-red); }
         .rate-small { font-size: 0.75rem; color: #666; font-weight: 400; margin-top: -4px; }
-        .data-notice { margin-top: 30px; padding: 20px; background: #fff; border-radius: 15px; border-left: 5px solid #ccc; font-size: 0.8rem; color: #777; line-height: 1.6; }
+        .data-notice { margin: 15px 0 25px; padding: 15px 20px; background: #fff; border-radius: 15px; border-left: 5px solid var(--bfc-red); font-size: 0.85rem; color: #666; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; }
         @media (max-width: 1000px) { .ranking-container { grid-template-columns: repeat(2, 1fr); } }
     </style>
@@ -68,7 +68,7 @@
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
         <span>통산<span id="stat-total">0경기</span></span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
-        <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <Span>승률<span id="stat-rate">0%</span></Span>
+        <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률<span id="stat-rate">0%</span></span>
     </div>
 </header>
 <div class="mode-switch">
@@ -100,10 +100,10 @@
             <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 성함 입력(선택 조회)" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
         </div>
         <div class="data-notice">
-        <b>💡 데이터 안내</b><br>
-        • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 기준으로 제공하고 있습니다. <br>
-        • 현재 대한축구협회 홈페이지 등에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부가 누락되어 있습니다.
-    </div>
+            <b>💡 데이터 안내</b><br>
+            • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회(리그, 코리아컵, 플레이오프, 챌린저스컵) 데이터를 기준으로 제공하고 있습니다. <br>
+            • 현재 대한축구협회 홈페이지 등에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부가 누락되어 있습니다.
+        </div>
     </div>
     <div id="player-section" style="display: none;">
         <div class="ranking-container">
@@ -129,18 +129,15 @@
                     <label><input type="checkbox" name="p-league" value="코리아컵" checked onchange="updateSubLeagues()"> 코리아컵</label>
                 </div>
             </div>
-                <div class="data-notice">
-        <b>💡 데이터 안내</b><br>
-        • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
-        • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다.           
-    </div>
         </div>
-        
+        <div class="data-notice">
+            <b>💡 데이터 안내</b><br>
+            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다. <br>
+            • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다.
+        </div>
     </div>
-    
     <div id="dynamic-header" class="view-header"><div style="display:flex; justify-content:space-between; align-items:center;"><div id="dynamic-title" style="font-weight:bold; font-size:1.1rem;"></div><button class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem;" onclick="resetToAll()">이전 결과로 돌아가기</button></div><div id="dynamic-summary" class="view-summary"></div></div>
     <div class="results-box"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
-    
 </div>
 <footer><p>© 2026 남성현. All Rights Reserved.</p></footer>
 <script>
@@ -249,8 +246,7 @@
             }
             if (year) tp.push(`(${year}시즌)`); titleEl.innerText = `🔍 ${tp.join(" ")}`;
             let filteredSummary = rawData.filter(m => {
-                const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppRaw = isH ? a : h;
-                const oppUnified = getUnifiedTeamName(oppRaw);
+                const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppUnified = getUnifiedTeamName(isH ? a : h);
                 if (currentFilter.opponent && oppUnified !== getUnifiedTeamName(currentFilter.opponent)) return false;
                 if (currentFilter.stadium && (m.stadium || "") !== currentFilter.stadium) return false;
                 if (sOpp && !oppUnified.includes(getUnifiedTeamName(sOpp))) return false; 
@@ -361,19 +357,16 @@
     function showSuggestions(input, type) {
         const v = input.value.trim(); const rL = input.nextElementSibling; if (!v) { rL.style.display = 'none'; return; }
         let suggestions = [];
-        
         if (type === 'opponentName') {
             suggestions = [...new Set(rawData.map(m => {
                 const isH = (m.hometeam || "").includes("부천");
                 return isH ? m.awayteam : m.hometeam;
             }))].filter(item => item && !item.includes("부천") && item.includes(v));
         } else if (type === 'playerName') {
-            // [수정] 데이터의 선수명(숫자포함) 그대로 제안
             suggestions = [...new Set(playerSeasonData.map(p => p.name))].filter(name => name.includes(v));
         } else {
             suggestions = [...new Set(rawData.map(m => m[type] || ""))].filter(item => item && item.includes(v));
         }
-        
         if (suggestions.length > 0) { 
             rL.innerHTML = suggestions.slice(0, 10).map(item => `<li onclick="selectSuggestion('${input.id}', '${item}', '${type}')">${item}</li>`).join(''); 
             rL.style.display = 'block'; 
@@ -385,11 +378,8 @@
         if(input) { 
             input.value = value; 
             input.nextElementSibling.style.display = 'none'; 
-            if (type === 'playerName') {
-                selectedPlayerSearchName = value; // 선택된 선수명 저장
-            } else if (type === 'opponentName') {
-                currentFilter.opponent = getUnifiedTeamName(value);
-            }
+            if (type === 'playerName') { selectedPlayerSearchName = value; } 
+            else if (type === 'opponentName') { currentFilter.opponent = getUnifiedTeamName(value); }
             updateView(); 
         } 
     }
@@ -399,7 +389,7 @@
     function filterByStadium(name) { currentFilter.stadium = name; updateView(); }
     function resetToAll() { 
         currentFilter = { opponent: null, stadium: null }; 
-        selectedPlayerSearchName = ""; // 선수명 검색 초기화
+        selectedPlayerSearchName = ""; 
         isTotalRankMode = false; 
         ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
         ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
@@ -408,9 +398,8 @@
         updateView(); 
     }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-    function formatSeasons(years) { years.sort((a,b)=>a-b); let res=[]; let s=years[0], e=years[0]; for(let i=1;i<=years.length;i++){ if(i<years.length && parseInt(years[i])===parseInt(e)+1) e=years[i]; else { res.push(s===e?s:`${s}~${String(e).slice(-2)}`); if(i<years.length){s=years[i]; e=years[i];} } } return res.join(', '); }
+    function formatSeasons(years) { years.sort((a,b)=>a-b); let res=[]; let s=years[0], e=years[0]; for(let i=1;i<=years.length;i++){ if(i<years.length && parseInt(years[i])===parseInt(e)+1) e=years[i]; else { res.push(s===e?s:`${s}~${String(e).slice(-2)}`); if(i<years.length){start=years[i]; end=years[i];} } } return res.join(', '); }
     window.onload = loadData;
 </script>
 </body>
 </html>
-
