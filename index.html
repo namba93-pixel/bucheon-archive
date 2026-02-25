@@ -100,8 +100,8 @@
     <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 데이터 포털</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
-        <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
-        <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
+        <span>통산</span><span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
+        <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
 </header>
 
@@ -133,13 +133,13 @@
         <div class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 성함 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정팬 조회</button></div>
+            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
+            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
         </div>
         <div class="data-notice">
             <b>💡 데이터 안내</b><br>
             • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회 데이터를 기준으로 제공합니다. <br>
-            • 현재 연맹 등에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부 누락되어 있습니다.
+            • 현재 대한축구협회에서 제공되지 않는 과거 데이터(관중수, 심판 정보)는 일부 누락되어 있습니다.
         </div>
     </div>
 
@@ -168,7 +168,9 @@
         </div>
         <div class="data-notice">
             <b>💡 데이터 안내</b><br>
-            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다.
+            • 선수 통산 기록은 부천 소속으로 출전한 공식 경기 기록만 합산하며, 2013년 프로 진출 이후 기록만 제공하고 있습니다.<br>
+            • 각 헤더를 클릭하시면, 최다기록 순으로 조회가 가능합니다. <br>
+            • 선수 이름을 클릭하시면, 선수 개인의 부천 통산 기록을 볼 수 있습니다.
         </div>
     </div>
 
@@ -192,7 +194,7 @@
     대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 있을 수 있습니다. <br> 
     문의사항이나 오류 발견사항이 있으실 경우 아래 메일로 연락 부탁드립니다. <br> 
     문의: namakear@naver.com <br> 
-    © 2026 BFC1995 데이터 포털. All Rights Reserved.</p>
+    © 2026 BFC1995 DATA PORTAL. All Rights Reserved.</p>
 </footer>
 
 <script>
@@ -456,3 +458,4 @@
 </script>
 </body>
 </html>
+
