@@ -394,20 +394,34 @@
     function toggleSortOnlyDesc(col) { sortState.column = col; sortState.direction = 'desc'; updateView(); }
 
     function resetToAll() { 
-        currentFilter = { opponent: null, stadium: null, type: null }; selectedPlayerSearchName = ""; isTotalRankMode = false;
+        // 1. 공통 필터 및 정렬 상태 초기화 (날짜 역순으로 원상복구)
+        currentFilter = { opponent: null, stadium: null, type: null }; 
+        selectedPlayerSearchName = ""; 
+        isTotalRankMode = false;
+        sortState = { column: 'date', direction: 'desc' }; // [중요] 최다 원정팬 정렬을 최신 날짜순으로 리셋
+        
+        // 2. 검색창 텍스트 및 셀렉트박스 초기화
         ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
         ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
         if(document.getElementById('check-all')) document.getElementById('check-all').checked = true;
         document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = true);
+        
+        // 3. 헤더 숨김
         document.getElementById('dynamic-header').style.display='none'; 
+        
+        // 4. 모드에 따른 레이아웃 복구
         document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
         document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
         document.getElementById('mode-t').className = currentMode === 'team' ? 'mode-btn active' : 'mode-btn';
         document.getElementById('mode-p').className = currentMode === 'player' ? 'mode-btn active' : 'mode-btn';
         document.getElementById('mode-h').className = 'mode-btn history-btn';
+        
         const awayBtn = document.getElementById('btn-away-fan');
         if(awayBtn) awayBtn.className = 'away-btn';
-        const pP = document.getElementById('player-ranking-panel'); if(pP) pP.style.display = "block";
+        
+        const pP = document.getElementById('player-ranking-panel'); 
+        if(pP) pP.style.display = currentMode === 'player' ? "block" : "none";
+        
         updateView(); 
     }
     
@@ -417,4 +431,5 @@
 </script>
 </body>
 </html>
+
 
