@@ -392,14 +392,18 @@ function showStreakView(type) {
                     </td>
                  </tr>`;
 
-        // 경기 데이터 행
+        // 경기 데이터 행 (상대팀 클릭 기능 제거 버전)
         html += sortedGames.map(m => {
             const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
             const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
+            
+            // 상대팀 이름 결정
+            const opponentName = isH ? m.awayteam : m.hometeam;
+
             return `<tr>
                 <td>${m.date}</td>
                 <td>${m.league}</td>
-                <td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td>
+                <td>${opponentName}</td> 
                 <td>${m.stadium||"-"}</td>
                 <td>${hS}:${aS}</td>
                 <td class="${res==='승'?'win':''}">${res}</td>
@@ -748,6 +752,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
