@@ -350,13 +350,13 @@ function showStreakView(type) {
 
     const header = document.getElementById('dynamic-header');
     header.style.display = "flex";
-    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 통산 최다 연승 기록` : `🔥 통산 최다 무패 기록 (TOP 3)`;
+    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 통산 최다 연승 기록` : `🔥 통산 최다 무패 기록`;
     
     const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
     const summary = document.getElementById('dynamic-summary');
     summary.innerHTML = type === 'win' ? 
-        `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연승 기록입니다.` :
-        `부천FC 역사상 무패 기록 <span>상위 3위</span>까지의 모든 구간을 조회합니다.`;
+        `부천FC1995 통산 최다 연승 기록은 <span>${targetGroups[0].count}연승</span>입니다.` :
+        `부천FC1995 통산 최다 무패 기록 <span>상위 3위</span>까지의 결과입니다.`;
     summary.style.display = 'block';
 
     document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
@@ -728,6 +728,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
