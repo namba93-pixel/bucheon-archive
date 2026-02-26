@@ -132,15 +132,15 @@
     <a href="javascript:void(0)" onclick="resetToAll()" class="home-link"><h1>부천FC1995 데이터 포털</h1></a>
     <div id="today-date" style="margin-top: 10px; font-size: 1rem; opacity: 0.8;"></div>
     <div class="stats-dashboard">
-        <span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
-        <span id="stat-gf">0득</span> <span id="stat-ga">0실</span> | <span id="stat-rate">0%</span>
+        <span>통산</span><span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
+        <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
 </header>
 
 <div class="mode-switch">
     <button id="mode-t" class="mode-btn active" onclick="switchMode('team')">🏟️ 팀 경기 기록</button>
     <button id="mode-p" class="mode-btn" onclick="switchMode('player')">🏃‍♂️ 선수 개인 기록</button>
-    <button id="mode-h" class="mode-btn history-btn" onclick="showHistorySection()">📜 TODAY'S HISTORY</button>
+    <button id="mode-h" class="mode-btn history-btn" onclick="showHistorySection()">📜 HISTORICAL POINT</button>
 </div>
 
 <div class="container">
@@ -584,6 +584,7 @@
 </script>
 </body>
 </html>
+
 
 
 
