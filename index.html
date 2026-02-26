@@ -281,15 +281,35 @@
     let selectedPlayerSearchName = ""; 
 
     async function loadData() {
-        try {
-            const [tRes, pRes] = await Promise.all([fetch(TEAM_URL + "&cb=" + Date.now()), fetch(PLAYER_URL + "&cb=" + Date.now())]);
-            rawData = parseCSV(await tRes.text()); playerSeasonData = parseCSV(await pRes.text());
-            const now = new Date(); document.getElementById('today-date').innerText = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 기준`;
-            fixAllTimeStats(); calculateTotalRankings(); initFilters(); updateView();
-        } catch (e) { console.error("Load Error", e); }
+    try {
+        const [tRes, pRes] = await Promise.all([
+            fetch(TEAM_URL + "&cb=" + Date.now()), 
+            fetch(PLAYER_URL + "&cb=" + Date.now())
+        ]);
+        
+        // 1. 데이터 파싱 및 변수 할당
+        rawData = parseCSV(await tRes.text()); 
+        playerSeasonData = parseCSV(await pRes.text());
+        
+        // 2. 날짜 표시 업데이트
+        const now = new Date(); 
+        document.getElementById('today-date').innerText = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 기준`;
+        
+        // 3. 기존 통계 및 필터 초기화
+        fixAllTimeStats(); 
+        calculateTotalRankings(); 
+        initFilters(); 
+        updateView(); 
 
-        calculateStreaks()
+        // 4. [중요] 모든 화면이 그려진 직후에 연승/무패 계산 실행
+        if (typeof calculateStreaks === 'function') {
+            calculateStreaks();
+        }
+
+    } catch (e) { 
+        console.error("Load Error", e); 
     }
+}
 
     let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
 
@@ -760,6 +780,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
