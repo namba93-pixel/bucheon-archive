@@ -390,7 +390,7 @@ function showStreakView(type) {
     const titleEl = document.getElementById('dynamic-title');
     const summary = document.getElementById('dynamic-summary');
     
-    // 검색창 숨기기 (원정관중수 조회와 동일한 로직)
+    // UI 정리 (검색창 숨기기)
     document.getElementById('team-filter-1').style.display = 'none';
     document.getElementById('team-filter-2').style.display = 'none';
     document.getElementById('team-notice').style.display = 'none';
@@ -399,17 +399,8 @@ function showStreakView(type) {
     titleEl.innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록`;
     
     const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
-    let combinedGames = [];
     
-    // 여러 번인 경우 구분하여 표시하기 위해 데이터 재구성
-    targetGroups.forEach((group, i) => {
-        const firstDate = group.games[0].date;
-        const lastDate = group.games[group.games.length - 1].date;
-        // 구분선 역할을 할 가상 데이터 삽입 (선택사항)
-        combinedGames.push(...group.games);
-    });
-
-    summary.innerHTML = `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연속 기록입니다. (총 ${targetGroups.length}개 구간 발견)`;
+    summary.innerHTML = `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연속 기록이 총 <span>${targetGroups.length}번</span> 있었습니다.`;
     summary.style.display = 'block';
 
     // 테이블 출력 (renderTeamTable 로직 재활용을 위해 filtered 설정)
@@ -417,13 +408,38 @@ function showStreakView(type) {
 }
 
 function renderStreakTable(games) {
-    // 날짜 내림차순으로 보여주되, 같은 그룹끼리는 묶여서 보이게 함
     document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
-    document.getElementById('table-body').innerHTML = games.map(m => {
-        const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-        const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
-        return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
-    }).join('');
+    
+    let html = "";
+    targetGroups.forEach((group, index) => {
+        const startDate = group.games[0].date;
+        const endDate = group.games[group.games.length - 1].date;
+
+        // [구분행 삽입] 각 연승/무패 구간 시작 전에 제목 행 추가
+        html += `<tr style="background-color: #f8f9fa; border-top: 2px solid var(--bfc-red);">
+                    <td colspan="8" style="padding: 15px; font-weight: 800; color: var(--bfc-red); text-align: left;">
+                        📍 ${index + 1}번째 최다 기록 구간 (${startDate} ~ ${endDate})
+                    </td>
+                 </tr>`;
+
+        // 해당 구간의 경기들 나열
+        html += group.games.map(m => {
+            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+            const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
+            return `<tr>
+                <td>${m.date}</td>
+                <td>${m.league}</td>
+                <td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td>
+                <td>${m.stadium||"-"}</td>
+                <td>${hS}:${aS}</td>
+                <td class="${res==='승'?'win':''}">${res}</td>
+                <td>${m.attendance||"-"}</td>
+                <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+            </tr>`;
+        }).join('');
+    });
+
+    document.getElementById('table-body').innerHTML = html;
 }
 
     // [핵심] 원정팬 조회 시 모든 검색 필터를 숨기는 로직 적용
@@ -692,6 +708,7 @@ function renderStreakTable(games) {
 </script>
 </body>
 </html>
+
 
 
 
