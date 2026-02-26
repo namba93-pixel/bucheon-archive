@@ -284,7 +284,91 @@
             const now = new Date(); document.getElementById('today-date').innerText = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 기준`;
             fixAllTimeStats(); calculateTotalRankings(); initFilters(); updateView();
         } catch (e) { console.error("Load Error", e); }
+
+        calculateStreaks()
     }
+
+    let allWinStreaks = [], allUndefeatedStreaks = [];
+
+function calculateStreaks() {
+    // 1. 날짜순 정렬 (과거 -> 최신)
+    const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let winGroups = [], undefGroups = [];
+    let tempWin = [], tempUndef = [];
+
+    sortedData.forEach((m) => {
+        const isH = (m.hometeam || "").includes("부천");
+        const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+        const myS = isH ? hS : aS, opS = isH ? aS : hS;
+        
+        const isWin = myS > opS;
+        const isNotLoss = myS >= opS;
+
+        // 연승 로직
+        if (isWin) tempWin.push(m);
+        else {
+            if (tempWin.length > 0) winGroups.push({count: tempWin.length, games: [...tempWin]});
+            tempWin = [];
+        }
+        // 무패 로직
+        if (isNotLoss) tempUndef.push(m);
+        else {
+            if (tempUndef.length > 0) undefGroups.push({count: tempUndef.length, games: [...tempUndef]});
+            tempUndef = [];
+        }
+    });
+    
+    // 마지막(현재) 진행중인 기록 처리
+    let activeWin = tempWin.length, activeUndef = tempUndef.length;
+    if (activeWin > 0) winGroups.push({count: activeWin, games: [...tempWin], active: true});
+    if (activeUndef > 0) undefGroups.push({count: activeUndef, games: [...tempUndef], active: true});
+
+    // 최다 기록 수치 찾기
+    const maxWin = Math.max(...winGroups.map(g => g.count), 0);
+    const maxUndef = Math.max(...undefGroups.map(g => g.count), 0);
+    
+    allWinStreaks = winGroups.filter(g => g.count === maxWin);
+    allUndefeatedStreaks = undefGroups.filter(g => g.count === maxUndef);
+
+    // UI 텍스트 업데이트
+    document.getElementById('max-win-count').innerText = maxWin + "경기";
+    document.getElementById('active-win-count').innerText = activeWin + "연승";
+    document.getElementById('max-undef-count').innerText = maxUndef + "경기";
+    document.getElementById('active-undef-count').innerText = activeUndef + "경기";
+}
+
+// 상세 조회 함수 (📍 구분행 포함)
+function showStreakView(type) {
+    resetToAll();
+    currentFilter.type = 'streak_view';
+    document.getElementById('team-filter-1').style.display = 'none';
+    document.getElementById('team-filter-2').style.display = 'none';
+    document.getElementById('team-notice').style.display = 'none';
+
+    const header = document.getElementById('dynamic-header');
+    header.style.display = "flex";
+    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록`;
+    
+    const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
+    const summary = document.getElementById('dynamic-summary');
+    summary.innerHTML = `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연속 기록이 총 <span>${targetGroups.length}번</span> 있었습니다.`;
+    summary.style.display = 'block';
+
+    document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
+    
+    let html = "";
+    targetGroups.forEach((group, index) => {
+        const sortedGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
+        html += `<tr style="background:#f8f9fa; border-top:2px solid var(--bfc-red);"><td colspan="8" style="padding:15px; font-weight:800; color:var(--bfc-red); text-align:left;">📍 ${index + 1}번째 최다 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})</td></tr>`;
+        html += sortedGames.map(m => {
+            const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+            const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
+            return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
+        }).join('');
+    });
+    document.getElementById('table-body').innerHTML = html;
+}
 
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
@@ -622,6 +706,7 @@
 </script>
 </body>
 </html>
+
 
 
 
