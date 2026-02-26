@@ -161,17 +161,20 @@
         <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
 
-    <div id="streak-banner-container" style="display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; padding: 0 15px;">
-    <div class="streak-card" onclick="showStreakView('win')">
+    <div id="streak-banner-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; padding: 0 15px;">
+    
+    <div class="streak-card" onclick="showStreakView('win')" style="width: 100%; max-width: 600px; justify-content: center;">
         <span class="streak-label">역대 최다연승 보러가기 (<b id="max-win-count">0경기</b>)</span>
         <span class="streak-divider">|</span>
         <span class="streak-current">현재 <b id="active-win-count" style="color:#ff4d4d">0연승</b> 진행중! 🔥</span>
     </div>
-    <div class="streak-card" onclick="showStreakView('undef')">
+    
+    <div class="streak-card" onclick="showStreakView('undef')" style="width: 100%; max-width: 600px; justify-content: center;">
         <span class="streak-label">역대 최다 무패 보러가기 (<b id="max-undef-count">0경기</b>)</span>
         <span class="streak-divider">|</span>
         <span class="streak-current">현재 <b id="active-undef-count" style="color:#ffad33">0경기</b> 무패 진행중! 🔥</span>
     </div>
+
 </div>
 </header>
 
@@ -340,33 +343,72 @@ function calculateStreaks() {
 
 // 상세 조회 함수 (📍 구분행 포함)
 function showStreakView(type) {
+    // 1. 초기화 및 기본 필터 숨기기
     resetToAll();
     currentFilter.type = 'streak_view';
-    document.getElementById('team-filter-1').style.display = 'none';
-    document.getElementById('team-filter-2').style.display = 'none';
-    document.getElementById('team-notice').style.display = 'none';
+    
+    // 2. 팀 기록 관련 모든 UI 강제 숨김
+    const teamFilter1 = document.getElementById('team-filter-1');
+    const teamFilter2 = document.getElementById('team-filter-2');
+    const teamNotice = document.getElementById('team-notice');
+    if (teamFilter1) teamFilter1.style.display = 'none';
+    if (teamFilter2) teamFilter2.style.display = 'none';
+    if (teamNotice) teamNotice.style.display = 'none';
 
+    // 3. [핵심] 선수 기록 및 랭킹 패널 강제 숨김 (이 부분이 노출 방지의 핵심입니다)
+    const playerSection = document.getElementById('player-section');
+    const playerRankingPanel = document.getElementById('player-ranking-panel');
+    if (playerSection) playerSection.style.display = 'none';
+    if (playerRankingPanel) playerRankingPanel.style.display = 'none';
+
+    // 4. 헤더 및 타이틀 설정
     const header = document.getElementById('dynamic-header');
-    header.style.display = "flex";
-    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록`;
+    const titleEl = document.getElementById('dynamic-title');
+    const summary = document.getElementById('dynamic-summary');
+    
+    if (header) header.style.display = "flex";
+    if (titleEl) {
+        titleEl.innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록`;
+    }
     
     const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
-    const summary = document.getElementById('dynamic-summary');
-    summary.innerHTML = `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연속 기록이 총 <span>${targetGroups.length}번</span> 있었습니다.`;
-    summary.style.display = 'block';
+    
+    if (summary) {
+        summary.innerHTML = `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연속 기록이 총 <span>${targetGroups.length}번</span> 있었습니다.`;
+        summary.style.display = 'block';
+    }
 
+    // 5. 테이블 헤더 및 본문 렌더링
     document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
     
     let html = "";
     targetGroups.forEach((group, index) => {
         const sortedGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
-        html += `<tr style="background:#f8f9fa; border-top:2px solid var(--bfc-red);"><td colspan="8" style="padding:15px; font-weight:800; color:var(--bfc-red); text-align:left;">📍 ${index + 1}번째 최다 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})</td></tr>`;
+        
+        // 구간 구분행
+        html += `<tr style="background:#f8f9fa; border-top:2px solid var(--bfc-red);">
+                    <td colspan="8" style="padding:15px; font-weight:800; color:var(--bfc-red); text-align:left;">
+                        📍 ${index + 1}번째 최다 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})
+                    </td>
+                 </tr>`;
+
+        // 경기 데이터 행
         html += sortedGames.map(m => {
             const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
             const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
-            return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
+            return `<tr>
+                <td>${m.date}</td>
+                <td>${m.league}</td>
+                <td><b class="clickable" onclick="filterByOpponent('${isH?m.awayteam:m.hometeam}')">${isH?m.awayteam:m.hometeam}</b></td>
+                <td>${m.stadium||"-"}</td>
+                <td>${hS}:${aS}</td>
+                <td class="${res==='승'?'win':''}">${res}</td>
+                <td>${m.attendance||"-"}</td>
+                <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+            </tr>`;
         }).join('');
     });
+
     document.getElementById('table-body').innerHTML = html;
 }
 
@@ -706,6 +748,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
