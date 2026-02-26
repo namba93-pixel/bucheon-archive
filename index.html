@@ -291,12 +291,10 @@
         calculateStreaks()
     }
 
-    let allWinStreaks = [], allUndefeatedStreaks = [];
+    let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
 
 function calculateStreaks() {
-    // 1. 날짜순 정렬 (과거 -> 최신)
     const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
-    
     let winGroups = [], undefGroups = [];
     let tempWin = [], tempUndef = [];
 
@@ -305,111 +303,89 @@ function calculateStreaks() {
         const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
         const myS = isH ? hS : aS, opS = isH ? aS : hS;
         
-        const isWin = myS > opS;
-        const isNotLoss = myS >= opS;
-
-        // 연승 로직
-        if (isWin) tempWin.push(m);
+        if (myS > opS) tempWin.push(m);
         else {
             if (tempWin.length > 0) winGroups.push({count: tempWin.length, games: [...tempWin]});
             tempWin = [];
         }
-        // 무패 로직
-        if (isNotLoss) tempUndef.push(m);
+
+        if (myS >= opS) tempUndef.push(m);
         else {
             if (tempUndef.length > 0) undefGroups.push({count: tempUndef.length, games: [...tempUndef]});
             tempUndef = [];
         }
     });
     
-    // 마지막(현재) 진행중인 기록 처리
+    // 현재 진행중 처리
     let activeWin = tempWin.length, activeUndef = tempUndef.length;
     if (activeWin > 0) winGroups.push({count: activeWin, games: [...tempWin], active: true});
     if (activeUndef > 0) undefGroups.push({count: activeUndef, games: [...tempUndef], active: true});
 
-    // 최다 기록 수치 찾기
-    const maxWin = Math.max(...winGroups.map(g => g.count), 0);
-    const maxUndef = Math.max(...undefGroups.map(g => g.count), 0);
+    // [수정] 무패 기록 TOP 3 수치 계산
+    const uniqueUndefCounts = [...new Set(undefGroups.map(g => g.count))].sort((a, b) => b - a);
+    const top3Counts = uniqueUndefCounts.slice(0, 3); // [13, 11, 10] 형태
     
-    allWinStreaks = winGroups.filter(g => g.count === maxWin);
-    allUndefeatedStreaks = undefGroups.filter(g => g.count === maxUndef);
+    allWinStreaks = winGroups.filter(g => g.count === Math.max(...winGroups.map(x => x.count), 0));
+    // [핵심] 상위 3개 수치에 포함되는 모든 그룹 추출
+    allUndefeatedStreaks = undefGroups.filter(g => top3Counts.includes(g.count))
+                                     .sort((a, b) => b.count - a.count);
 
-    // UI 텍스트 업데이트
-    document.getElementById('max-win-count').innerText = maxWin + "경기";
+    // UI 반영
+    document.getElementById('max-win-count').innerText = Math.max(...winGroups.map(x => x.count), 0) + "경기";
     document.getElementById('active-win-count').innerText = activeWin + "연승";
-    document.getElementById('max-undef-count').innerText = maxUndef + "경기";
+    
+    // 배너에는 1위 기록 수치만 표시하거나 "TOP 3"라고 명시
+    document.getElementById('max-undef-count').innerText = top3Counts[0] + "경기 (TOP 3)";
     document.getElementById('active-undef-count').innerText = activeUndef + "경기";
 }
 
 // 상세 조회 함수 (📍 구분행 포함)
 function showStreakView(type) {
-    // 1. 초기화 및 기본 필터 숨기기
     resetToAll();
     currentFilter.type = 'streak_view';
     
-    // 2. 팀 기록 관련 모든 UI 강제 숨김
-    const teamFilter1 = document.getElementById('team-filter-1');
-    const teamFilter2 = document.getElementById('team-filter-2');
-    const teamNotice = document.getElementById('team-notice');
-    if (teamFilter1) teamFilter1.style.display = 'none';
-    if (teamFilter2) teamFilter2.style.display = 'none';
-    if (teamNotice) teamNotice.style.display = 'none';
+    // UI 숨김 로직 (기존과 동일)
+    const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
+    hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
 
-    // 3. [핵심] 선수 기록 및 랭킹 패널 강제 숨김 (이 부분이 노출 방지의 핵심입니다)
-    const playerSection = document.getElementById('player-section');
-    const playerRankingPanel = document.getElementById('player-ranking-panel');
-    if (playerSection) playerSection.style.display = 'none';
-    if (playerRankingPanel) playerRankingPanel.style.display = 'none';
-
-    // 4. 헤더 및 타이틀 설정
     const header = document.getElementById('dynamic-header');
-    const titleEl = document.getElementById('dynamic-title');
-    const summary = document.getElementById('dynamic-summary');
-    
-    if (header) header.style.display = "flex";
-    if (titleEl) {
-        titleEl.innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록`;
-    }
+    header.style.display = "flex";
+    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 통산 최다 연승 기록` : `🔥 통산 최다 무패 기록 (TOP 3)`;
     
     const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
-    
-    if (summary) {
-        summary.innerHTML = `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연속 기록이 총 <span>${targetGroups.length}번</span> 있었습니다.`;
-        summary.style.display = 'block';
-    }
+    const summary = document.getElementById('dynamic-summary');
+    summary.innerHTML = type === 'win' ? 
+        `부천FC 역사상 최다 기록인 <span>${targetGroups[0].count}경기</span> 연승 기록입니다.` :
+        `부천FC 역사상 무패 기록 <span>상위 3위</span>까지의 모든 구간을 조회합니다.`;
+    summary.style.display = 'block';
 
-    // 5. 테이블 헤더 및 본문 렌더링
     document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
     
     let html = "";
+    let currentRank = 0;
+    let lastCount = -1;
+
     targetGroups.forEach((group, index) => {
+        // 순위 계산 (수치가 달라질 때만 순위 증가)
+        if (group.count !== lastCount) {
+            currentRank++;
+            lastCount = group.count;
+        }
+
         const sortedGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        // 구간 구분행
-        html += `<tr style="background:#f8f9fa; border-top:2px solid var(--bfc-red);">
-                    <td colspan="8" style="padding:15px; font-weight:800; color:var(--bfc-red); text-align:left;">
-                        📍 ${index + 1}번째 최다 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})
+        // [구분행] 순위 정보 추가
+        html += `<tr style="background:#f8f9fa; border-top:2px solid ${currentRank === 1 ? '#ed1c24' : '#555'};">
+                    <td colspan="8" style="padding:15px; font-weight:800; color:${currentRank === 1 ? '#ed1c24' : '#333'}; text-align:left;">
+                        ${type === 'undef' ? `[${currentRank}위 기록 - ${group.count}경기] ` : ''} 
+                        📍 ${index + 1}번째 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})
                     </td>
                  </tr>`;
 
-        // 경기 데이터 행 (상대팀 클릭 기능 제거 버전)
         html += sortedGames.map(m => {
             const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
             const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
-            
-            // 상대팀 이름 결정
-            const opponentName = isH ? m.awayteam : m.hometeam;
-
-            return `<tr>
-                <td>${m.date}</td>
-                <td>${m.league}</td>
-                <td>${opponentName}</td> 
-                <td>${m.stadium||"-"}</td>
-                <td>${hS}:${aS}</td>
-                <td class="${res==='승'?'win':''}">${res}</td>
-                <td>${m.attendance||"-"}</td>
-                <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
-            </tr>`;
+            return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
         }).join('');
     });
 
@@ -752,6 +728,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
