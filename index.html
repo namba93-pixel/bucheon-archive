@@ -390,7 +390,7 @@ function showStreakView(type) {
     const titleEl = document.getElementById('dynamic-title');
     const summary = document.getElementById('dynamic-summary');
     
-    // UI 정리 (검색창 숨기기)
+    // UI 정리
     document.getElementById('team-filter-1').style.display = 'none';
     document.getElementById('team-filter-2').style.display = 'none';
     document.getElementById('team-notice').style.display = 'none';
@@ -411,19 +411,21 @@ function renderStreakTable(games) {
     document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
     
     let html = "";
+    // [수정] 전체 데이터를 날짜로 다시 섞지 않고, 그룹별로 순차 렌더링
     targetGroups.forEach((group, index) => {
-        const startDate = group.games[0].date;
-        const endDate = group.games[group.games.length - 1].date;
+        // 각 그룹 내의 경기를 날짜순으로 정렬 (과거 -> 최신)
+        const sortedGroupGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        const startDate = sortedGroupGames[0].date;
+        const endDate = sortedGroupGames[sortedGroupGames.length - 1].date;
 
-        // [구분행 삽입] 각 연승/무패 구간 시작 전에 제목 행 추가
         html += `<tr style="background-color: #f8f9fa; border-top: 2px solid var(--bfc-red);">
                     <td colspan="8" style="padding: 15px; font-weight: 800; color: var(--bfc-red); text-align: left;">
                         📍 ${index + 1}번째 최다 기록 구간 (${startDate} ~ ${endDate})
                     </td>
                  </tr>`;
 
-        // 해당 구간의 경기들 나열
-        html += group.games.map(m => {
+        html += sortedGroupGames.map(m => {
             const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
             const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
             return `<tr>
@@ -708,6 +710,7 @@ function renderStreakTable(games) {
 </script>
 </body>
 </html>
+
 
 
 
