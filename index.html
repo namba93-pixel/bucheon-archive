@@ -330,25 +330,13 @@ function calculateStreaks() {
     allUndefeatedStreaks = undefGroups.filter(g => top3Counts.includes(g.count))
                                      .sort((a, b) => b.count - a.count);
 
-    // [강력한 업데이트] ID 대신 클래스 선택자로 직접 배너 내용을 다시 씁니다.
-    const winCard = document.querySelector('.streak-card[onclick*="win"]');
-    const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
-
-    if (winCard) {
-        let html = `<span class="streak-label">역대 최다연승 보러가기 (<b>${maxWin}경기</b>)</span>`;
-        if (activeWin >= 2) {
-            html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
-        }
-        winCard.innerHTML = html;
-    }
-
-    if (undefCard) {
-        let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${top3Counts[0]}경기</b>)</span>`;
-        if (activeUndef >= 7) {
-            html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
-        }
-        undefCard.innerHTML = html;
-    }
+    // UI 반영
+    document.getElementById('max-win-count').innerText = Math.max(...winGroups.map(x => x.count), 0) + "경기";
+    document.getElementById('active-win-count').innerText = activeWin + "연승";
+    
+    // 배너에는 1위 기록 수치만 표시하거나 "TOP 3"라고 명시
+    document.getElementById('max-undef-count').innerText = top3Counts[0] + "경기 (TOP 3)";
+    document.getElementById('active-undef-count').innerText = activeUndef + "경기";
 }
 
 // 상세 조회 함수 (📍 구분행 포함)
@@ -740,11 +728,6 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
-
-
-
-
-
 
 
 
