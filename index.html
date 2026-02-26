@@ -294,6 +294,12 @@
     let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
 
 function calculateStreaks() {
+
+    // [안전장치 1] 데이터가 없으면 계산을 시도하지 않고 종료합니다.
+    if (!window.rawData || window.rawData.length === 0) {
+        console.log("데이터 로딩 중...");
+        return; 
+    }
     const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
     let winGroups = [], undefGroups = [];
     let tempWin = [], tempUndef = [];
@@ -331,6 +337,10 @@ function calculateStreaks() {
                                      .sort((a, b) => b.count - a.count);
 
     // [최종 수정] 조건부 노출 로직 (2연승 이상 / 7경기 무패 이상)
+    const winCard = document.querySelector('.streak-card[onclick*="win"]');
+    const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
+
+    // [안전장치 2] HTML 요소가 실제로 존재하는지 확인 후 렌더링
     const winCard = document.querySelector('.streak-card[onclick*="win"]');
     const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
 
@@ -750,6 +760,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
