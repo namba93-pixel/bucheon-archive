@@ -135,16 +135,6 @@
         <span>통산</span><span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
         <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
-    <div class="streak-container">
-        <div class="streak-badge" onclick="showStreakDetail('win')">
-            역대 최다연승 보러가기 (<b id="best-win-streak">0</b>경기)
-            <span id="cur-win-label" class="current-label" style="display:none;">현재 <span id="cur-win-val"></span>연승 진행중! 🔥</span>
-        </div>
-        <div class="streak-badge" onclick="showStreakDetail('unbeaten')">
-            역대 최다 무패 보러가기 (<b id="best-unbeaten-streak">0</b>경기)
-            <span id="cur-unbeaten-label" class="current-label" style="display:none;">현재 <span id="cur-unbeaten-val"></span>경기 무패 진행중! 🔥</span>
-        </div>
-    </div>
 </header>
 
 <div class="mode-switch">
@@ -249,10 +239,6 @@
     let isTotalRankMode = false;
     let selectedPlayerSearchName = ""; 
 
-    // 기록 추적용 전역 변수
-    let bestWinStreakGroups = [];
-    let bestUnbeatenStreakGroups = [];
-
     async function loadData() {
         try {
             const [tRes, pRes] = await Promise.all([fetch(TEAM_URL + "&cb=" + Date.now()), fetch(PLAYER_URL + "&cb=" + Date.now())]);
@@ -274,64 +260,6 @@
         });
     }
 
-    // [신규] 다중 기록 대응 연속 기록 산정 로직
-    function calculateStreaks() {
-        if (!rawData.length) return;
-        const sorted = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        let winPools = [], unbeatenPools = [];
-        let curWin = [], curUnb = [];
-
-        sorted.forEach(m => {
-            const isH = (m.hometeam || "").includes("부천");
-            const myS = isH ? parseInt(m.homescored)||0 : parseInt(m.awayscored)||0;
-            const opS = isH ? parseInt(m.awayscored)||0 : parseInt(m.homescored)||0;
-
-            if (myS > opS) { curWin.push(m); } 
-            else { if(curWin.length > 1) winPools.push([...curWin]); curWin = []; }
-
-            if (myS >= opS) { curUnb.push(m); } 
-            else { if(curUnb.length > 1) unbeatenPools.push([...curUnb]); curUnb = []; }
-        });
-        if(curWin.length > 1) winPools.push(curWin);
-        if(curUnb.length > 1) unbeatenPools.push(curUnb);
-
-        // 최다 기록 수치 찾기
-        const maxW = Math.max(...winPools.map(p => p.length), 0);
-        const maxU = Math.max(...unbeatenPools.map(p => p.length), 0);
-        
-        // 동일한 최다 기록을 가진 모든 시기 필터링
-        bestWinStreakGroups = winPools.filter(p => p.length === maxW);
-        bestUnbeatenStreakGroups = unbeatenPools.filter(p => p.length === maxU);
-
-        document.getElementById('best-win-streak').innerText = maxW;
-        document.getElementById('best-unbeaten-streak').innerText = maxU;
-
-        // 현재 진행중 판단 (가장 마지막 경기가 포함된 그룹이 있는지)
-        const lastGame = sorted[sorted.length - 1];
-        const ongoingWin = winPools.find(p => p.includes(lastGame));
-        const ongoingUnb = unbeatenPools.find(p => p.includes(lastGame));
-
-        if(ongoingWin) {
-            document.getElementById('cur-win-label').style.display = 'inline';
-            document.getElementById('cur-win-val').innerText = ongoingWin.length;
-        }
-        if(ongoingUnb) {
-            document.getElementById('cur-unbeaten-label').style.display = 'inline';
-            document.getElementById('cur-unbeaten-val').innerText = ongoingUnb.length;
-        }
-    }
-
-    function showStreakDetail(type) {
-        resetToAll(); currentFilter.type = 'streak_multi';
-        currentFilter.streakPools = (type === 'win') ? bestWinStreakGroups : bestUnbeatenStreakGroups;
-        
-        document.getElementById('team-filter-1').style.display = 'none';
-        document.getElementById('team-filter-2').style.display = 'none';
-        document.getElementById('team-notice').style.display = 'none';
-        updateView();
-    }
-    
     function getUnifiedLeagueName(n) { 
         if(!n) return ""; const l = n.toLowerCase();
         if(l.includes("플레이오프") || l.includes("준플레이오프") || l.includes("승강")) return "플레이오프";
@@ -420,7 +348,6 @@
         const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary');
         
         let filtered = [];
-        let isMultiStreak = false;
 
         // [수정] 투데이 히스토리(개막전) 진입 시 필터 영역 숨기기
         if (currentFilter.type === 'opening_match') {
@@ -442,14 +369,6 @@
         else if (currentFilter.type === 'away_fan') {
             header.style.display = "flex"; titleEl.innerText = `🔍 부천FC1995 원정경기에 함께한 원정관중 기록`;
             filtered = rawData.filter(m => !(m.hometeam || "").includes("부천") && parseInt(m.date.substring(0,4)) >= 2023);
-        }
-        else if (currentFilter.type === 'streak_multi') {
-            isMultiStreak = true;
-            header.style.display = "flex";
-            const count = currentFilter.streakPools[0].length;
-            const isWin = currentFilter.streakPools === bestWinStreakGroups;
-            titleEl.innerText = isWin ? `🏆 역대 최다 ${count}연승 기록 (${currentFilter.streakPools.length}건)` : `🔥 역대 최다 ${count}경기 무패 기록 (${currentFilter.streakPools.length}건)`;
-            summary.innerHTML = "중복된 최다 기록이 있을 경우 시기별로 구분하여 표시합니다.";
         }
         else {
             const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef;
@@ -664,6 +583,12 @@
     window.onload = loadData;
 </script>
 </body>
+</html>
+
+
+
+
+
 
 
 
