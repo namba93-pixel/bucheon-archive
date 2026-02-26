@@ -75,7 +75,8 @@
         .data-notice { margin: 15px 0 25px; padding: 15px 20px; background: #fff; border-radius: 15px; border-left: 5px solid var(--bfc-red); font-size: 0.85rem; color: #666; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; line-height: 1.8; }
 
-        @media (max-width: 768px) {
+        @media (max-width: 768px)     {
+            
     /* 1. 헤더 및 대시보드 조정 */
     header { padding: 30px 10px 50px; }
     header h1 { font-size: 1.3rem; }
@@ -135,6 +136,19 @@
         <span>통산</span><span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
         <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
+
+    <div id="streak-banner-container" style="display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; padding: 0 15px;">
+    <div class="streak-card" onclick="showStreakView('win')">
+        <span class="streak-label">역대 최다연승 보러가기 (<b id="max-win-count">0경기</b>)</span>
+        <span class="streak-divider">|</span>
+        <span class="streak-current">현재 <b id="active-win-count" style="color:#ff4d4d">0연승</b> 진행중! 🔥</span>
+    </div>
+    <div class="streak-card" onclick="showStreakView('undef')">
+        <span class="streak-label">역대 최다 무패 보러가기 (<b id="max-undef-count">0경기</b>)</span>
+        <span class="streak-divider">|</span>
+        <span class="streak-current">현재 <b id="active-undef-count" style="color:#ffad33">0경기</b> 무패 진행중! 🔥</span>
+    </div>
+</div>
 </header>
 
 <div class="mode-switch">
@@ -584,6 +598,7 @@
 </script>
 </body>
 </html>
+
 
 
 
