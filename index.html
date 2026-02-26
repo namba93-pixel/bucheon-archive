@@ -135,6 +135,16 @@
         <span>통산</span><span id="stat-total">0경기</span> | <span id="stat-w">0승</span> <span id="stat-d">0무</span> <span id="stat-l">0패</span> | 
         <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
+    <div class="streak-container">
+        <div class="streak-badge" onclick="showStreakDetail('win')">
+            역대 최다연승 보러가기 (<b id="best-win-streak">0</b>경기)
+            <span id="cur-win-label" class="current-label" style="display:none;">현재 <span id="cur-win-val"></span>연승 진행중! 🔥</span>
+        </div>
+        <div class="streak-badge" onclick="showStreakDetail('unbeaten')">
+            역대 최다 무패 보러가기 (<b id="best-unbeaten-streak">0</b>경기)
+            <span id="cur-unbeaten-label" class="current-label" style="display:none;">현재 <span id="cur-unbeaten-val"></span>경기 무패 진행중! 🔥</span>
+        </div>
+    </div>
 </header>
 
 <div class="mode-switch">
@@ -583,5 +593,6 @@
     window.onload = loadData;
 </script>
 </body>
+
 
 
