@@ -334,8 +334,7 @@ function calculateStreaks() {
     document.getElementById('max-win-count').innerText = Math.max(...winGroups.map(x => x.count), 0) + "경기";
     document.getElementById('active-win-count').innerText = activeWin + "연승";
     
-    // 배너에는 1위 기록 수치만 표시하거나 "TOP 3"라고 명시
-    document.getElementById('max-undef-count').innerText = top3Counts[0] + "경기 (TOP 3)";
+    // 배너에는 1위 기록 수치만 표시
     document.getElementById('active-undef-count').innerText = activeUndef + "경기";
 }
 
@@ -728,6 +727,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
