@@ -439,7 +439,7 @@ function showStreakView(type) {
         });
         document.getElementById('stat-total').innerText = rawData.length + "경기";
         document.getElementById('stat-w').innerText = w + "승"; document.getElementById('stat-d').innerText = d + "무"; document.getElementById('stat-l').innerText = l + "패";
-        document.getElementById('stat-gf').innerText = gf + "득"; document.getElementById('stat-ga').innerText = ga + "실";
+        document.getElementById('stat-gf').innerText = gf + "득점"; document.getElementById('stat-ga').innerText = ga + "실점";
         document.getElementById('stat-rate').innerText = rawData.length ? (((w + d * 0.5) / rawData.length) * 100).toFixed(1) + "%" : "0%";
     }
 
@@ -728,6 +728,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
