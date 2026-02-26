@@ -51,6 +51,29 @@
         .view-header { margin-top: 20px; background: white; padding: 20px; border-radius: 15px; border-left: 6px solid var(--bfc-red); box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; flex-direction: column; gap: 10px; }
         .view-summary { font-size: 0.95rem; color: #555; border-top: 1px dashed #eee; padding-top: 10px; }
         .view-summary span { color: var(--bfc-red); font-weight: bold; }
+        
+        .streak-card {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+    color: #eee;
+    font-size: 0.9rem;
+}
+.streak-card:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: translateY(-2px);
+    border-color: var(--bfc-red);
+}
+.streak-label { font-weight: 500; color: #ccc; }
+.streak-label b { color: #ffd700; } /* 금색 포인트 */
+.streak-divider { color: rgba(255,255,255,0.2); }
+.streak-current { font-weight: 700; }
 
         .results-box { background: white; border-radius: 15px; margin-top: 15px; overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; }
@@ -75,6 +98,7 @@
         .data-notice { margin: 15px 0 25px; padding: 15px 20px; background: #fff; border-radius: 15px; border-left: 5px solid var(--bfc-red); font-size: 0.85rem; color: #666; line-height: 1.6; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         footer { background-color: var(--bfc-black); color: #999; text-align: center; padding: 40px 20px; margin-top: auto; line-height: 1.8; }
 
+        
         @media (max-width: 768px)     {
             
     /* 1. 헤더 및 대시보드 조정 */
@@ -598,6 +622,7 @@
 </script>
 </body>
 </html>
+
 
 
 
