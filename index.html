@@ -552,13 +552,35 @@ function showStreakView(type) {
             });
         }
 
-        let tw=0, td=0, tl=0, tgf=0, tga=0; 
-        filtered.forEach(m => { const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS; tgf += myS; tga += opS; if (myS > opS) tw++; else if (myS < opS) tl++; else td++; });
-        if(header.style.display !== "none") {
-            if (currentFilter.type === 'away_fan') summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
-            else summary.innerHTML = `조회 결과: <span>${filtered.length}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점)`;
-            summary.style.display = 'block';
-        }
+        if (header.style.display !== "none") {
+    let tw = 0, td = 0, tl = 0, tgf = 0, tga = 0;
+    
+    // 필터링된 경기들을 돌며 승무패 및 득실 계산
+    filtered.forEach(m => {
+        const isH = (m.hometeam || "").includes("부천");
+        const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
+        const myS = isH ? hS : aS, opS = isH ? aS : hS;
+        
+        tgf += myS; 
+        tga += opS;
+        
+        if (myS > opS) tw++; 
+        else if (myS < opS) tl++; 
+        else td++;
+    });
+
+    const totalGames = filtered.length;
+    // 승률 계산 로직 (K리그 공식 승률 방식: (승 + 무*0.5) / 전체경기)
+    const winRate = totalGames ? (((tw + td * 0.5) / totalGames) * 100).toFixed(1) : 0;
+
+    // 요약 문구 업데이트 (득점/실점 표기 통일 및 승률 추가)
+    if (currentFilter.type === 'away_fan') {
+        summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
+    } else {
+        summary.innerHTML = `조회 결과: <span>${totalGames}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점) - <b>승률 ${winRate}%</b>`;
+    }
+    summary.style.display = 'block';
+}
 
         let dData = [...filtered].sort((a,b) => {
             let vA = a[sortState.column], vB = b[sortState.column];
@@ -728,6 +750,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
