@@ -293,8 +293,8 @@
 
     let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
 
+// 1. 데이터 계산 및 배너 업데이트 함수
 function calculateStreaks() {
-    // 1. 데이터 안전장치 (데이터가 없으면 계산 진행 안 함)
     if (!rawData || rawData.length === 0) return;
 
     const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -305,8 +305,10 @@ function calculateStreaks() {
         const isH = (m.hometeam || "").includes("부천");
         const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
         const myS = isH ? hS : aS, opS = isH ? aS : hS;
+        
         if (myS > opS) tempWin.push(m);
         else { if (tempWin.length > 0) winGroups.push({ count: tempWin.length, games: [...tempWin] }); tempWin = []; }
+        
         if (myS >= opS) tempUndef.push(m);
         else { if (tempUndef.length > 0) undefGroups.push({ count: tempUndef.length, games: [...tempUndef] }); tempUndef = []; }
     });
@@ -315,55 +317,49 @@ function calculateStreaks() {
     if (activeWin > 0) winGroups.push({ count: activeWin, games: [...tempWin], active: true });
     if (activeUndef > 0) undefGroups.push({ count: activeUndef, games: [...tempUndef], active: true });
 
+    // 연승 최다치 및 무패 TOP 3 수치 계산
     const maxWin = winGroups.length > 0 ? Math.max(...winGroups.map(x => x.count)) : 0;
     const uniqueUndef = [...new Set(undefGroups.map(g => g.count))].sort((a, b) => b - a);
-    const maxUndef = uniqueUndef.length > 0 ? uniqueUndef[0] : 0;
+    const top3Counts = uniqueUndef.length > 0 ? uniqueUndef.slice(0, 3) : [0];
 
-    // 2. UI 업데이트 (역대 기록 고정 + 진행 중 선택 노출)
+    // 상세 페이지용 전역 변수에 저장
+    allWinStreaks = winGroups.filter(g => g.count === maxWin);
+    allUndefeatedStreaks = undefGroups.filter(g => top3Counts.includes(g.count)).sort((a, b) => b.count - a.count);
+
+    // 배너 UI 업데이트 (조건부 노출)
     const winCard = document.querySelector('.streak-card[onclick*="win"]');
     const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
 
     if (winCard) {
-        // 역대 최다 기록은 어떤 경우에도 0이 아닌 maxWin 값으로 먼저 출력
         let html = `<span class="streak-label">역대 최다연승 보러가기 (<b>${maxWin}경기</b>)</span>`;
-        
-        // 조건 만족 시에만 문구 추가
-        if (activeWin >= 2) {
-            html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
-        }
+        if (activeWin >= 3) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
         winCard.innerHTML = html;
     }
-
     if (undefCard) {
-        // 역대 최다 무패 수치 고정 출력
-        let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${maxUndef}경기</b>)</span>`;
-        
-        // 조건 만족 시에만 문구 추가
-        if (activeUndef >= 7) {
-            html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
-        }
+        let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${top3Counts[0]}경기</b>)</span>`;
+        if (activeUndef >= 7) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
         undefCard.innerHTML = html;
     }
 }
 
-// 상세 조회 함수 (📍 구분행 포함)
+// 2. 상세 기록 조회 함수 (📍 구분행 + 무패 TOP 3 포함)
 function showStreakView(type) {
     resetToAll();
     currentFilter.type = 'streak_view';
     
-    // UI 숨김 로직 (기존과 동일)
+    // 타 섹션 숨김
     const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
     hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
 
     const header = document.getElementById('dynamic-header');
     header.style.display = "flex";
-    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 통산 최다 연승 기록` : `🔥 통산 최다 무패 기록`;
+    document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록 (상위 3위)`;
     
     const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
     const summary = document.getElementById('dynamic-summary');
     summary.innerHTML = type === 'win' ? 
-        `부천FC1995 통산 최다 연승 기록은 <span>${targetGroups[0].count}연승</span>입니다.` :
-        `부천FC1995 통산 최다 무패 기록 <span>상위 3위</span>까지의 결과입니다.`;
+        `부천FC 역사상 최다 연승 기록인 <span>${targetGroups[0].count}경기</span> 구간이 총 <span>${targetGroups.length}번</span> 있었습니다.` :
+        `부천FC 역사상 무패 기록 <span>상위 3위</span>까지의 모든 구간을 조회합니다.`;
     summary.style.display = 'block';
 
     document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
@@ -373,17 +369,13 @@ function showStreakView(type) {
     let lastCount = -1;
 
     targetGroups.forEach((group, index) => {
-        // 순위 계산 (수치가 달라질 때만 순위 증가)
-        if (group.count !== lastCount) {
-            currentRank++;
-            lastCount = group.count;
-        }
-
+        if (group.count !== lastCount) { currentRank++; lastCount = group.count; }
         const sortedGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        // [구분행] 순위 정보 추가
-        html += `<tr style="background:#f8f9fa; border-top:2px solid ${currentRank === 1 ? '#ed1c24' : '#555'};">
-                    <td colspan="8" style="padding:15px; font-weight:800; color:${currentRank === 1 ? '#ed1c24' : '#333'}; text-align:left;">
+        // 📍 구간 구분행 (1위는 레드, 나머지는 다크 그레이)
+        const rowColor = (type === 'undef' && currentRank === 1) || (type === 'win') ? '#ed1c24' : '#555';
+        html += `<tr style="background:#f8f9fa; border-top:2px solid ${rowColor};">
+                    <td colspan="8" style="padding:15px; font-weight:800; color:${rowColor}; text-align:left;">
                         ${type === 'undef' ? `[${currentRank}위 기록 - ${group.count}경기] ` : ''} 
                         📍 ${index + 1}번째 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})
                     </td>
@@ -395,9 +387,9 @@ function showStreakView(type) {
             return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
         }).join('');
     });
-
     document.getElementById('table-body').innerHTML = html;
 }
+
 
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
@@ -757,6 +749,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
