@@ -332,7 +332,7 @@ function calculateStreaks() {
 
     if (winCard) {
         let html = `<span class="streak-label">역대 최다연승 보러가기 (<b>${maxWin}경기</b>)</span>`;
-        if (activeWin >= 3) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
+        if (activeWin >= 2) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
         winCard.innerHTML = html;
     }
     if (undefCard) {
@@ -749,6 +749,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
