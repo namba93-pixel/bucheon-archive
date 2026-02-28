@@ -294,51 +294,40 @@
     let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
 
 function calculateStreaks() {
+    // 1. 데이터 안전장치 (데이터가 없으면 계산 진행 안 함)
+    if (!rawData || rawData.length === 0) return;
+
     const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
     let winGroups = [], undefGroups = [];
     let tempWin = [], tempUndef = [];
 
     sortedData.forEach((m) => {
         const isH = (m.hometeam || "").includes("부천");
-        const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+        const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
         const myS = isH ? hS : aS, opS = isH ? aS : hS;
-        
         if (myS > opS) tempWin.push(m);
-        else {
-            if (tempWin.length > 0) winGroups.push({count: tempWin.length, games: [...tempWin]});
-            tempWin = [];
-        }
-
+        else { if (tempWin.length > 0) winGroups.push({ count: tempWin.length, games: [...tempWin] }); tempWin = []; }
         if (myS >= opS) tempUndef.push(m);
-        else {
-            if (tempUndef.length > 0) undefGroups.push({count: tempUndef.length, games: [...tempUndef]});
-            tempUndef = [];
-        }
+        else { if (tempUndef.length > 0) undefGroups.push({ count: tempUndef.length, games: [...tempUndef] }); tempUndef = []; }
     });
     
-    // 현재 진행중 처리
     let activeWin = tempWin.length, activeUndef = tempUndef.length;
-    if (activeWin > 0) winGroups.push({count: activeWin, games: [...tempWin], active: true});
-    if (activeUndef > 0) undefGroups.push({count: activeUndef, games: [...tempUndef], active: true});
+    if (activeWin > 0) winGroups.push({ count: activeWin, games: [...tempWin], active: true });
+    if (activeUndef > 0) undefGroups.push({ count: activeUndef, games: [...tempUndef], active: true });
 
-    // [수정] 무패 기록 TOP 3 수치 계산
-    const uniqueUndefCounts = [...new Set(undefGroups.map(g => g.count))].sort((a, b) => b - a);
-    const top3Counts = uniqueUndefCounts.slice(0, 3); // [13, 11, 10] 형태
-    
-    allWinStreaks = winGroups.filter(g => g.count === Math.max(...winGroups.map(x => x.count), 0));
-    // [핵심] 상위 3개 수치에 포함되는 모든 그룹 추출
-    allUndefeatedStreaks = undefGroups.filter(g => top3Counts.includes(g.count))
-                                     .sort((a, b) => b.count - a.count);
+    const maxWin = winGroups.length > 0 ? Math.max(...winGroups.map(x => x.count)) : 0;
+    const uniqueUndef = [...new Set(undefGroups.map(g => g.count))].sort((a, b) => b - a);
+    const maxUndef = uniqueUndef.length > 0 ? uniqueUndef[0] : 0;
 
-    // [조건 수정] 연승: 3연승 이상 / 무패: 7경기 무패 이상
+    // 2. UI 업데이트 (역대 기록 고정 + 진행 중 선택 노출)
     const winCard = document.querySelector('.streak-card[onclick*="win"]');
     const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
 
     if (winCard) {
-        // 역대 최고 기록은 항상 표시
+        // 역대 최다 기록은 어떤 경우에도 0이 아닌 maxWin 값으로 먼저 출력
         let html = `<span class="streak-label">역대 최다연승 보러가기 (<b>${maxWin}경기</b>)</span>`;
         
-        // [수정] 현재 3연승 이상일 때만 '진행중' 문구 노출
+        // 조건 만족 시에만 문구 추가 (3연승 이상)
         if (activeWin >= 3) {
             html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
         }
@@ -346,19 +335,15 @@ function calculateStreaks() {
     }
 
     if (undefCard) {
-        // 역대 최고 기록은 항상 표시
-        let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${top3Counts[0]}경기</b>)</span>`;
+        // 역대 최다 무패 수치 고정 출력
+        let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${maxUndef}경기</b>)</span>`;
         
-        // [조건 유지] 현재 7경기 무패 이상일 때만 '진행중' 문구 노출
+        // 조건 만족 시에만 문구 추가 (7경기 무패 이상)
         if (activeUndef >= 7) {
             html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
         }
         undefCard.innerHTML = html;
     }
-    
-    // 배너에는 1위 기록 수치만 표시하거나 "TOP 3"라고 명시
-    document.getElementById('max-undef-count').innerText = top3Counts[0] + "경기";
-    document.getElementById('active-undef-count').innerText = activeUndef + "경기";
 }
 
 // 상세 조회 함수 (📍 구분행 포함)
@@ -772,6 +757,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
