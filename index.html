@@ -327,8 +327,8 @@ function calculateStreaks() {
         // 역대 최다 기록은 어떤 경우에도 0이 아닌 maxWin 값으로 먼저 출력
         let html = `<span class="streak-label">역대 최다연승 보러가기 (<b>${maxWin}경기</b>)</span>`;
         
-        // 조건 만족 시에만 문구 추가 (3연승 이상)
-        if (activeWin >= 3) {
+        // 조건 만족 시에만 문구 추가
+        if (activeWin >= 2) {
             html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
         }
         winCard.innerHTML = html;
@@ -338,7 +338,7 @@ function calculateStreaks() {
         // 역대 최다 무패 수치 고정 출력
         let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${maxUndef}경기</b>)</span>`;
         
-        // 조건 만족 시에만 문구 추가 (7경기 무패 이상)
+        // 조건 만족 시에만 문구 추가
         if (activeUndef >= 7) {
             html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
         }
@@ -757,6 +757,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
