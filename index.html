@@ -181,7 +181,7 @@
 <div class="mode-switch">
     <button id="mode-t" class="mode-btn active" onclick="switchMode('team')">🏟️ 팀 경기 기록</button>
     <button id="mode-p" class="mode-btn" onclick="switchMode('player')">🏃‍♂️ 선수 개인 기록</button>
-    <button id="mode-h" class="mode-btn history-btn" onclick="showHistorySection()">📜 HISTORICAL POINT</button>
+    <button id="mode-h" class="mode-btn history-btn" onclick="showHistoricalPoint()">📜 HISTORICAL POINT</button>
 </div>
 
 <div class="container">
@@ -474,7 +474,7 @@ function showHistoricalPoint() {
     }).sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
 
     const summary = document.getElementById('dynamic-summary');
-    summary.innerHTML = `부천FC1995가 매년 <span>3월 1일부터 3월 9일</span> 사이에 치른 홈경기 기록입니다. (총 <span>${historicalGames.length}경기</span>)`;
+    summary.innerHTML = `부천FC1995가 매년 <span>3월 초(1일부터 9일)</span> 사이에 치른 홈경기 기록입니다. (총 <span>${historicalGames.length}경기</span>)`;
     summary.style.display = 'block';
 
     // 테이블 헤더 출력
@@ -790,6 +790,7 @@ function showHistoricalPoint() {
 </script>
 </body>
 </html>
+
 
 
 
