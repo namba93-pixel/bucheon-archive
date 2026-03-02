@@ -451,15 +451,56 @@ function showStreakView(type) {
         updateView();
     }
 
-    function showHistorySection() {
-        resetToAll(); currentFilter.type = 'opening_match';
-        document.getElementById('team-section').style.display = 'block';
-        document.getElementById('player-section').style.display = 'none';
-        document.getElementById('mode-h').className = 'mode-btn history-btn active';
-        document.getElementById('mode-t').className = 'mode-btn';
-        document.getElementById('mode-p').className = 'mode-btn';
-        updateView();
+function showHistoricalPoint() {
+    resetToAll();
+    currentFilter.type = 'historical_point';
+    
+    // UI 숨김 설정 (검색창, 선수 랭킹 등 차단)
+    const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
+    hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+
+    const header = document.getElementById('dynamic-header');
+    header.style.display = "flex";
+    document.getElementById('dynamic-title').innerText = `📅 HISTORICAL POINT: 3월의 시작 (Home)`;
+    
+    const historicalGames = rawData.filter(m => {
+        if (!m.date) return false;
+        const dateParts = m.date.split('.'); // 
+        const month = parseInt(dateParts[1]);
+        const day = parseInt(dateParts[2]);
+        const isHome = (m.hometeam || "").includes("부천");
+
+        return month === 3 && day >= 1 && day <= 9 && isHome;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
+
+    const summary = document.getElementById('dynamic-summary');
+    summary.innerHTML = `부천FC1995가 매년 <span>3월 1일부터 3월 9일</span> 사이에 치른 홈경기 기록입니다. (총 <span>${historicalGames.length}경기</span>)`;
+    summary.style.display = 'block';
+
+    // 테이블 헤더 출력
+    document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
+    
+    if (historicalGames.length === 0) {
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="padding:30px; color:#999;">해당 기간의 홈경기 기록이 없습니다.</td></tr>`;
+        return;
     }
+
+    // 데이터 렌더링
+    document.getElementById('table-body').innerHTML = historicalGames.map(m => {
+        const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+        const res = hS > aS ? "승" : (hS < aS ? "패" : "무");
+        return `<tr>
+            <td>${m.date}</td>
+            <td>${m.league}</td>
+            <td>${m.awayteam}</td>
+            <td>${m.stadium||"-"}</td>
+            <td>${hS}:${aS}</td>
+            <td class="${res==='승'?'win':''}">${res}</td>
+            <td>${m.attendance||"-"}</td>
+            <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+        </tr>`;
+    }).join('');
+}
 
     // [핵심] 원정팬 조회 시 모든 검색 필터를 숨기는 로직 적용
     function showAwayFanSection() {
@@ -749,6 +790,7 @@ function showStreakView(type) {
 </script>
 </body>
 </html>
+
 
 
 
