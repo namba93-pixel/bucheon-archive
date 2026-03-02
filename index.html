@@ -461,7 +461,7 @@ function showHistoricalPoint() {
 
     const header = document.getElementById('dynamic-header');
     header.style.display = "flex";
-    document.getElementById('dynamic-title').innerText = `📅 HISTORICAL POINT: 3월의 시작 (Home)`;
+    document.getElementById('dynamic-title').innerText = `📅 HISTORICAL POINT: 역대 3월 초 홈경기 경기결과`;
     
     const historicalGames = rawData.filter(m => {
         if (!m.date) return false;
@@ -473,8 +473,8 @@ function showHistoricalPoint() {
         return month === 3 && day >= 1 && day <= 9 && isHome;
     }).sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
 
-    const summary = document.getElementById('dynamic-summary');
-    summary.innerHTML = `부천FC1995가 매년 <span>3월 초(1일부터 9일)</span> 사이에 치른 홈경기 기록입니다. (총 <span>${historicalGames.length}경기</span>)`;
+const summary = document.getElementById('dynamic-summary');
+    summary.innerHTML = `조회 결과: <span>${totalGames}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점) - <b>승률 ${winRate}%</b>`;
     summary.style.display = 'block';
 
     // 테이블 헤더 출력
@@ -790,6 +790,7 @@ function showHistoricalPoint() {
 </script>
 </body>
 </html>
+
 
 
 
