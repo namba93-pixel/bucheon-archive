@@ -451,11 +451,11 @@ function showStreakView(type) {
         updateView();
     }
 
+// 1. 메인 호출 함수 (데이터 필터링 및 요약 바 출력)
 function showHistoricalPoint() {
     resetToAll();
     currentFilter.type = 'historical_point';
     
-    // UI 숨김 설정 (검색창, 선수 랭킹 등 차단)
     const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
     hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
 
@@ -463,30 +463,56 @@ function showHistoricalPoint() {
     header.style.display = "flex";
     document.getElementById('dynamic-title').innerText = `📅 HISTORICAL POINT: 역대 3월 초 홈경기 경기결과`;
     
-    const historicalGames = rawData.filter(m => {
-        if (!m.date) return false;
-        const dateParts = m.date.split('-'); // 
-        const month = parseInt(dateParts[1]);
-        const day = parseInt(dateParts[2]);
+    // 데이터 필터링 (3월 1일~9일 & 부천 홈경기)
+    historicalPointData = rawData.filter(m => {
+        if (!m.date || !m.date.includes('-')) return false;
+        const parts = m.date.split('-');
+        const month = parseInt(parts[1]);
+        const day = parseInt(parts[2]);
         const isHome = (m.hometeam || "").includes("부천");
-
         return month === 3 && day >= 1 && day <= 9 && isHome;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date)); // 최신순 정렬
+    });
 
-const summary = document.getElementById('dynamic-summary');
+    // 통계 계산
+    let tw = 0, td = 0, tl = 0, tgf = 0, tga = 0;
+    historicalPointData.forEach(m => {
+        const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
+        tgf += hS; tga += aS;
+        if (hS > aS) tw++; else if (hS < aS) tl++; else td++;
+    });
+    const totalGames = historicalPointData.length;
+    const winRate = totalGames ? (((tw + td * 0.5) / totalGames) * 100).toFixed(1) : 0;
+
+    const summary = document.getElementById('dynamic-summary');
     summary.innerHTML = `조회 결과: <span>${totalGames}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점) - <b>승률 ${winRate}%</b>`;
     summary.style.display = 'block';
 
-    // 테이블 헤더 출력
-    document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
+    // 기본 정렬: 최신순 후 렌더링
+    historicalPointData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    renderHistoricalPointTable(historicalPointData);
+}
+
+// 2. [추가] HISTORICAL POINT 전용 테이블 렌더링 함수
+function renderHistoricalPointTable(data) {
+    // 헤더에 클릭 시 정렬 함수 연결 (날짜, 관중 등)
+    document.getElementById('table-head').innerHTML = `
+        <tr>
+            <th onclick="sortHistoricalPoint('date')" style="cursor:pointer">날짜 ↕</th>
+            <th>대회</th>
+            <th>상대</th>
+            <th>장소</th>
+            <th>스코어</th>
+            <th>결과</th>
+            <th onclick="sortHistoricalPoint('attendance')" style="cursor:pointer">관중 ↕</th>
+            <th>감독</th>
+        </tr>`;
     
-    if (historicalGames.length === 0) {
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="padding:30px; color:#999;">해당 기간의 홈경기 기록이 없습니다.</td></tr>`;
+    if (data.length === 0) {
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="padding:40px; color:#999; text-align:center;">기록이 없습니다.</td></tr>`;
         return;
     }
 
-    // 데이터 렌더링
-    document.getElementById('table-body').innerHTML = historicalGames.map(m => {
+    document.getElementById('table-body').innerHTML = data.map(m => {
         const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
         const res = hS > aS ? "승" : (hS < aS ? "패" : "무");
         return `<tr>
@@ -496,10 +522,29 @@ const summary = document.getElementById('dynamic-summary');
             <td>${m.stadium||"-"}</td>
             <td>${hS}:${aS}</td>
             <td class="${res==='승'?'win':''}">${res}</td>
-            <td>${m.attendance||"-"}</td>
+            <td>${m.attendance ? m.attendance.toLocaleString() : "-"}</td>
             <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
         </tr>`;
     }).join('');
+}
+
+// 3. [추가] HISTORICAL POINT 전용 정렬 실행 함수
+let historicalSortState = { col: 'date', desc: true };
+function sortHistoricalPoint(col) {
+    historicalSortState.desc = (historicalSortState.col === col) ? !historicalSortState.desc : true;
+    historicalSortState.col = col;
+
+    historicalPointData.sort((a, b) => {
+        let v1 = a[col], v2 = b[col];
+        if (col === 'attendance') {
+            v1 = parseInt(String(v1).replace(/,/g, '')) || 0;
+            v2 = parseInt(String(v2).replace(/,/g, '')) || 0;
+        } else if (col === 'date') {
+            v1 = new Date(v1); v2 = new Date(v2);
+        }
+        return historicalSortState.desc ? v2 - v1 : v1 - v2;
+    });
+    renderHistoricalPointTable(historicalPointData);
 }
 
     // [핵심] 원정팬 조회 시 모든 검색 필터를 숨기는 로직 적용
@@ -790,6 +835,7 @@ const summary = document.getElementById('dynamic-summary');
 </script>
 </body>
 </html>
+
 
 
 
