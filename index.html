@@ -465,7 +465,7 @@ function showHistoricalPoint() {
     
     const historicalGames = rawData.filter(m => {
         if (!m.date) return false;
-        const dateParts = m.date.split('.'); // 
+        const dateParts = m.date.split('-'); // 
         const month = parseInt(dateParts[1]);
         const day = parseInt(dateParts[2]);
         const isHome = (m.hometeam || "").includes("부천");
@@ -790,6 +790,7 @@ function showHistoricalPoint() {
 </script>
 </body>
 </html>
+
 
 
 
