@@ -605,23 +605,43 @@ function sortHistoricalPoint(col) {
                 header.style.display = "flex";
                 const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent), stadium = currentFilter.stadium, league = selLg, bfcMgr = mgr, oppMgr = sOppMgr, ref = sRef;
                 let titleStr = "";
-                if (ref) titleStr = `${ref} 주심이 진행한 경기 결과`;
-                else if (bfcMgr && oppMgr) titleStr = `${oppMgr} 감독과 ${bfcMgr} 감독의 맞대결 결과`;
-                else if (oppMgr && tOpp) titleStr = `${tOpp}의 ${oppMgr} 감독을 상대로 한 경기 결과`;
-                else if (oppMgr) titleStr = `${oppMgr} 감독과의 경기 결과`;
-                else if (stadium && tOpp && bfcMgr) titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp)} ${bfcMgr} 감독의 ${league ? league + ' ' : ''}경기 결과`;
-                else if (stadium && tOpp) titleStr = `${stadium}에서 ${tOpp}${getWithParticle(tOpp, true)} ${league ? league + ' ' : ''}경기 결과`;
-                else if (tOpp && bfcMgr && league) titleStr = `${tOpp}${getWithParticle(tOpp)} ${bfcMgr} 감독의 ${league} 경기 결과`;
-                else if (tOpp && league) titleStr = `${tOpp}${getWithParticle(tOpp, true)} ${league} 경기 결과`;
-                else if (tOpp && bfcMgr) titleStr = `${tOpp}${getWithParticle(tOpp)} ${bfcMgr} 감독의 경기 결과`;
-                else if (tOpp) titleStr = `${tOpp}${getWithParticle(tOpp, true)} 경기 결과`;
-                else if (bfcMgr && league) titleStr = `${bfcMgr} 감독의 ${league} 경기 결과`;
-                else if (bfcMgr) titleStr = `${bfcMgr} 감독의 경기 결과`;
-                else if (league) titleStr = `역대 ${league} 경기 결과`;
-                else if (loc === 'home') titleStr = "홈에서의 경기 결과";
-                else if (loc === 'away') titleStr = "원정에서의 경기 결과";
-                else titleStr = "경기 결과";
-                titleEl.innerText = `🔍 ${titleStr}${year ? ` (${year}시즌)` : ""}`;
+                // [고도화 버전] 조건별 동적 타이틀 생성
+                let locStr = loc === 'home' ? '홈경기' : (loc === 'away' ? '원정경기' : '경기');
+                let withParticle = tOpp ? getWithParticle(tOpp, true) : ""; // '팀'과의
+                let yearStr = year ? ` (${year}시즌)` : "";
+
+                if (ref) {
+                    titleStr = `${ref} 주심이 진행한 ${locStr} 결과`;
+                } else if (bfcMgr && oppMgr) {
+                    titleStr = `${oppMgr} 감독과 ${bfcMgr} 감독의 ${locStr} 맞대결 결과`;
+                } else if (oppMgr && tOpp) {
+                    titleStr = `${tOpp}의 ${oppMgr} 감독을 상대로 한 ${locStr} 결과`;
+                } else if (oppMgr) {
+                    titleStr = `${oppMgr} 감독과의 ${locStr} 결과`;
+                } 
+                  else {
+                    let parts = [];
+                    
+                    // 1. 부천 감독 정보
+                    if (bfcMgr) parts.push(`${bfcMgr} 감독의`);
+                    
+                    // 2. 대회 정보
+                    if (league) parts.push(`${league}`);
+                    
+                    // 3. 상대팀 정보
+                    if (tOpp) parts.push(`${tOpp}${withParticle}`);
+
+                    // 4. 장소 및 최종 결합
+                    if (parts.length > 0) {
+                        titleStr = `${parts.join(' ')} ${locStr} 결과`;
+                    } else {
+                        // 기본 상태
+                        titleStr = loc === 'home' ? "역대 홈경기 결과" : (loc === 'away' ? "역대 원정경기 결과" : "전체 경기 결과");
+                    }
+                }
+
+                // 최종 출력 (시즌 정보 포함)
+                titleEl.innerText = `🔍 ${titleStr}${yearStr}`;
             } else header.style.display = "none";
             filtered = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppUnified = getUnifiedTeamName(isH ? a : h);
@@ -835,6 +855,7 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
+
 
 
 
