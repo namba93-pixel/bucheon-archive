@@ -620,7 +620,7 @@ function sortHistoricalPoint(col) {
                 else if (league) titleStr = `역대 ${league} 경기 결과`;
                 else if (loc === 'home') titleStr = "홈에서의 경기 결과";
                 else if (loc === 'away') titleStr = "원정에서의 경기 결과";
-                else titleStr = "조회 결과";
+                else titleStr = "경기 결과";
                 titleEl.innerText = `🔍 ${titleStr}${year ? ` (${year}시즌)` : ""}`;
             } else header.style.display = "none";
             filtered = rawData.filter(m => {
@@ -835,6 +835,7 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
+
 
 
 
