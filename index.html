@@ -590,32 +590,47 @@ function showPureHomeStats() {
 
     const header = document.getElementById('dynamic-header');
     header.style.display = "flex";
-    document.getElementById('dynamic-title').innerText = `🏠 역대 순수 홈 관중 기록 (원정팬 제외)`;
+    
+    // [수정] 헤더 타이틀 변경
+    document.getElementById('dynamic-title').innerText = `🏠 부천FC1995 홈경기에 함께한 순수 홈 관중 기록 (원정팬 제외)`;
 
-    // 1. 데이터 가공: 홈 경기 중 관중 데이터가 있는 것만 추출 + 점유율 계산
+    // 1. 데이터 가공 (홈 경기 판정 및 수치 계산 강화)
     pureHomeData = rawData.filter(m => {
-        const total = parseInt(String(m.attendance || 0).replace(/,/g, ''));
-        const away = parseInt(String(m.away_fans || m.awayfans || 0).replace(/,/g, ''));
-        return (m.hometeam || "").includes("부천") && total > 0 && away > 0;
+        // 부천이 홈팀인 경기만 필터링
+        const isHome = (m.hometeam || "").includes("부천");
+        const totalRaw = String(m.attendance || "0").replace(/,/g, '');
+        const awayRaw = String(m.away_fans || m.awayfans || "0").replace(/,/g, '');
+        
+        const total = parseInt(totalRaw) || 0;
+        const away = parseInt(awayRaw) || 0;
+
+        // 전체 관중과 원정 관중 데이터가 둘 다 있는 2023년 이후 경기만 타겟팅
+        return isHome && total > 0 && away > 0;
     }).map(m => {
-        const total = parseInt(String(m.attendance || 0).replace(/,/g, ''));
-        const away = parseInt(String(m.away_fans || m.awayfans || 0).replace(/,/g, ''));
+        const total = parseInt(String(m.attendance).replace(/,/g, '')) || 0;
+        const away = parseInt(String(m.away_fans || m.awayfans).replace(/,/g, '')) || 0;
         const pureHomeCount = total - away;
-        const ratio = total > 0 ? ((pureHomeCount / total) * 100).toFixed(1) : 0;
+        const ratio = ((pureHomeCount / total) * 100).toFixed(1);
+        
         return { ...m, pure_home_count: pureHomeCount, pure_home_ratio: parseFloat(ratio) };
     });
 
-    // 2. 통계 요약 (전체 합계 및 평균)
+    // 2. 통계 요약
     let totalPure = 0;
     pureHomeData.forEach(m => totalPure += m.pure_home_count);
     const avgPure = pureHomeData.length > 0 ? Math.round(totalPure / pureHomeData.length) : 0;
 
+    // [수정] 요약 바 문구 
     const summary = document.getElementById('dynamic-summary');
     summary.innerHTML = `조회 결과: <span>총 ${pureHomeData.length}경기</span> 누적 순수 홈 관중 <span>${totalPure.toLocaleString()}명</span> (평균 ${avgPure.toLocaleString()}명)`;
-    summary.innerHTML += `<br><small style="color:#888;">* 전체 관중에서 원정석 관중을 제외한 수치이며, 점유율(%)은 홈 팬의 비중입니다.</small>`;
+    summary.innerHTML += `
+        <div style="margin-top: 8px; font-size: 0.85rem; color: #666; font-weight: normal; line-height: 1.5;">
+            • 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.<br>
+            • 전체 관중에서 원정석 관중을 제외한 수치이며, 점유율(%)은 홈 팬의 비중입니다.
+        </div>`;
     summary.style.display = 'block';
 
-    // 3. 기본 정렬(날짜 최신순) 후 테이블 출력
+    // 3. 렌더링
     pureHomeData.sort((a, b) => new Date(b.date) - new Date(a.date));
     renderPureHomeTable(pureHomeData);
 }
@@ -954,6 +969,7 @@ function sortPureHome(col) {
 </script>
 </body>
 </html>
+
 
 
 
