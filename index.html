@@ -581,10 +581,10 @@ function sortHistoricalPoint(col) {
 
     // [추가] 순수홈관중 조회 실행 함수
 function showPureHomeStats() {
-    resetToAll(); // 필터 초기화
-    currentFilter.type = 'pure_home'; // 필터 타입을 순수홈으로 설정
+    resetToAll();
+    currentFilter.type = 'pure_home';
     
-    // UI 숨김 처리 (다른 필터 패널 등)
+    // UI 정리
     const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
     hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
 
@@ -592,35 +592,77 @@ function showPureHomeStats() {
     header.style.display = "flex";
     document.getElementById('dynamic-title').innerText = `🏠 역대 순수 홈 관중 기록 (원정팬 제외)`;
 
-    // 1. 홈 경기만 필터링
-    const homeGames = rawData.filter(m => (m.hometeam || "").includes("부천"));
-    
-    let totalPureHome = 0;
-    let validMatchCount = 0;
-
-    // 2. 순수 홈 관중 합산 (전체 관중 - 원정 관중)
-    homeGames.forEach(m => {
-        const total = parseInt(String(m.attendance || 0).replace(/,/g, '')) || 0;
-        const away = parseInt(String(m.away_fans || m.awayfans || 0).replace(/,/g, '')) || 0;
-        
-        // 원정관중 데이터가 있는 경우에만 유효한 경기로 판단 (2023년 이후)
-        if (total > 0 && away > 0) {
-            totalPureHome += (total - away);
-            validMatchCount++;
-        }
+    // 1. 데이터 가공: 홈 경기 중 관중 데이터가 있는 것만 추출 + 점유율 계산
+    pureHomeData = rawData.filter(m => {
+        const total = parseInt(String(m.attendance || 0).replace(/,/g, ''));
+        const away = parseInt(String(m.away_fans || m.awayfans || 0).replace(/,/g, ''));
+        return (m.hometeam || "").includes("부천") && total > 0 && away > 0;
+    }).map(m => {
+        const total = parseInt(String(m.attendance || 0).replace(/,/g, ''));
+        const away = parseInt(String(m.away_fans || m.awayfans || 0).replace(/,/g, ''));
+        const pureHomeCount = total - away;
+        const ratio = total > 0 ? ((pureHomeCount / total) * 100).toFixed(1) : 0;
+        return { ...m, pure_home_count: pureHomeCount, pure_home_ratio: parseFloat(ratio) };
     });
 
-    const avgPureHome = validMatchCount > 0 ? Math.round(totalPureHome / validMatchCount) : 0;
+    // 2. 통계 요약 (전체 합계 및 평균)
+    let totalPure = 0;
+    pureHomeData.forEach(m => totalPure += m.pure_home_count);
+    const avgPure = pureHomeData.length > 0 ? Math.round(totalPure / pureHomeData.length) : 0;
 
-    // 3. 요약 바 업데이트
     const summary = document.getElementById('dynamic-summary');
-    summary.innerHTML = `조회 결과: <span>총 ${validMatchCount}경기</span> 누적 순수 홈 관중 <span>${totalPureHome.toLocaleString()}명</span> (평균 ${avgPureHome.toLocaleString()}명)`;
-    summary.innerHTML += `<br><small style="color:#888;">* 전체 관중에서 원정석 관중을 제외한 수치입니다. (2023년 이후 데이터 위주)</small>`;
+    summary.innerHTML = `조회 결과: <span>총 ${pureHomeData.length}경기</span> 누적 순수 홈 관중 <span>${totalPure.toLocaleString()}명</span> (평균 ${avgPure.toLocaleString()}명)`;
+    summary.innerHTML += `<br><small style="color:#888;">* 전체 관중에서 원정석 관중을 제외한 수치이며, 점유율(%)은 홈 팬의 비중입니다.</small>`;
     summary.style.display = 'block';
 
-    // 4. 테이블 렌더링 (홈 경기들만 표시)
-    // 기존에 사용하시던 renderTable 또는 renderTeamTable 함수를 활용하세요.
-    renderTeamTable(homeGames); 
+    // 3. 기본 정렬(날짜 최신순) 후 테이블 출력
+    pureHomeData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    renderPureHomeTable(pureHomeData);
+}
+
+    function renderPureHomeTable(data) {
+    document.getElementById('table-head').innerHTML = `
+        <tr>
+            <th onclick="sortPureHome('date')" style="cursor:pointer">날짜 ↕</th>
+            <th>대회</th>
+            <th>상대</th>
+            <th>장소</th>
+            <th>스코어</th>
+            <th>결과</th>
+            <th onclick="sortPureHome('pure_home_count')" style="cursor:pointer">순수 홈관중 (점유율) ↕</th>
+            <th>감독</th>
+        </tr>`;
+    
+    document.getElementById('table-body').innerHTML = data.map(m => {
+        const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+        const res = hS > aS ? "승" : (hS < aS ? "패" : "무");
+        return `<tr>
+            <td>${m.date}</td>
+            <td>${m.league}</td>
+            <td>${m.awayteam}</td>
+            <td>${m.stadium||"-"}</td>
+            <td>${hS}:${aS}</td>
+            <td style="color:${res==='승'?'#ed1c24':(res==='패'?'#333':'#666')}; font-weight:bold;">${res}</td>
+            <td style="color:#ed1c24; font-weight:bold;">
+                ${m.pure_home_count.toLocaleString()} <small style="color:#888; font-weight:normal;">(${m.pure_home_ratio}%)</small>
+            </td>
+            <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+        </tr>`;
+    }).join('');
+}
+
+// 정렬 상태 관리 및 실행
+let pureHomeSortState = { col: 'date', desc: true };
+function sortPureHome(col) {
+    pureHomeSortState.desc = (pureHomeSortState.col === col) ? !pureHomeSortState.desc : true;
+    pureHomeSortState.col = col;
+
+    pureHomeData.sort((a, b) => {
+        let v1 = a[col], v2 = b[col];
+        if (col === 'date') { v1 = new Date(v1); v2 = new Date(v2); }
+        return pureHomeSortState.desc ? v2 - v1 : v1 - v2;
+    });
+    renderPureHomeTable(pureHomeData);
 }
 
     function updateView() { if (currentMode === 'team' || currentFilter.type) renderTeamTable(); else { if (isTotalRankMode) renderAllRankingsTable(); else renderPlayerTable(); } }
@@ -912,6 +954,7 @@ function showPureHomeStats() {
 </script>
 </body>
 </html>
+
 
 
 
