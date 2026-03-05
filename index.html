@@ -627,12 +627,15 @@ function sortHistoricalPoint(col) {
                     if (bfcMgr) parts.push(`${bfcMgr} 감독의`);
                     
                     // 2. 대회 정보
-                    if (league) parts.push(`${league}`);
+                    if (league) parts.push(`${league}에서`);
                     
                     // 3. 상대팀 정보
                     if (tOpp) parts.push(`${tOpp}${withParticle}`);
 
-                    // 4. 장소 및 최종 결합
+                    // 4. 장소 정보
+                    if (stadium) parts.push('${stadium}에서의');
+
+                    // 5. 장소 및 최종 결합
                     if (parts.length > 0) {
                         titleStr = `${parts.join(' ')} ${locStr} 결과`;
                     } else {
@@ -856,6 +859,7 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
+
 
 
 
