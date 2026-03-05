@@ -207,15 +207,8 @@
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item">
-                <div style="display: flex; gap: 8px; width: 100%;">
-                    <button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()" style="flex: 1; padding: 10px; font-size: 0.85rem; white-space: nowrap;">
-                    🚌 원정관중수 조회
-                    </button>
-                    <button id="btn-pure-home" class="home-btn" onclick="showPureHomeStats()" style="flex: 1; padding: 10px; font-size: 0.85rem; white-space: nowrap; background-color: #ed1c24; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    🏠 순수홈관중 조회
-                    </button>
-                </div>
+            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
+        </div>
         <div id="team-notice" class="data-notice">
             <b>💡 데이터 안내</b><br>
             • 팀 경기기록은 2007년 창단 이후 부천FC1995의 모든 공식 대회 데이터를 기준으로 제공합니다. <br>
@@ -866,8 +859,6 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
-
-
 
 
 
