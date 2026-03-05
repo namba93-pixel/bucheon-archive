@@ -579,6 +579,50 @@ function sortHistoricalPoint(col) {
         updateView();
     }
 
+    // [추가] 순수홈관중 조회 실행 함수
+function showPureHomeStats() {
+    resetToAll(); // 필터 초기화
+    currentFilter.type = 'pure_home'; // 필터 타입을 순수홈으로 설정
+    
+    // UI 숨김 처리 (다른 필터 패널 등)
+    const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
+    hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+
+    const header = document.getElementById('dynamic-header');
+    header.style.display = "flex";
+    document.getElementById('dynamic-title').innerText = `🏠 역대 순수 홈 관중 기록 (원정팬 제외)`;
+
+    // 1. 홈 경기만 필터링
+    const homeGames = rawData.filter(m => (m.hometeam || "").includes("부천"));
+    
+    let totalPureHome = 0;
+    let validMatchCount = 0;
+
+    // 2. 순수 홈 관중 합산 (전체 관중 - 원정 관중)
+    homeGames.forEach(m => {
+        const total = parseInt(String(m.attendance || 0).replace(/,/g, '')) || 0;
+        const away = parseInt(String(m.away_fans || m.awayfans || 0).replace(/,/g, '')) || 0;
+        
+        // 원정관중 데이터가 있는 경우에만 유효한 경기로 판단 (2023년 이후)
+        if (total > 0 && away > 0) {
+            totalPureHome += (total - away);
+            validMatchCount++;
+        }
+    });
+
+    const avgPureHome = validMatchCount > 0 ? Math.round(totalPureHome / validMatchCount) : 0;
+
+    // 3. 요약 바 업데이트
+    const summary = document.getElementById('dynamic-summary');
+    summary.innerHTML = `조회 결과: <span>총 ${validMatchCount}경기</span> 누적 순수 홈 관중 <span>${totalPureHome.toLocaleString()}명</span> (평균 ${avgPureHome.toLocaleString()}명)`;
+    summary.innerHTML += `<br><small style="color:#888;">* 전체 관중에서 원정석 관중을 제외한 수치입니다. (2023년 이후 데이터 위주)</small>`;
+    summary.style.display = 'block';
+
+    // 4. 테이블 렌더링 (홈 경기들만 표시)
+    // 기존에 사용하시던 renderTable 또는 renderTeamTable 함수를 활용하세요.
+    renderTeamTable(homeGames); 
+}
+
     function updateView() { if (currentMode === 'team' || currentFilter.type) renderTeamTable(); else { if (isTotalRankMode) renderAllRankingsTable(); else renderPlayerTable(); } }
 
     function renderTeamTable() {
@@ -868,6 +912,7 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
+
 
 
 
