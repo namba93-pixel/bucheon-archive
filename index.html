@@ -212,7 +212,7 @@
         <button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()" style="flex: 1; padding: 10px; font-size: 0.85rem; white-space: nowrap;">
             🚌 원정관중수 조회
         </button>
-        <button id="btn-pure-home" class="home-btn" onclick="showPureHomeStats()" style="flex: 1; padding: 10px; font-size: 0.85rem; white-space: nowrap; background-color: #ed1c24; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        <button id="btn-pure-home" class="home-btn" onclick="showPureHomeFans()" style="flex: 1; padding: 10px; font-size: 0.85rem; white-space: nowrap; background-color: #ed1c24; color: white; border: none; border-radius: 4px; cursor: pointer;">
             🏠 순수홈관중 조회
         </button>
     </div>
@@ -579,106 +579,28 @@ function sortHistoricalPoint(col) {
         updateView();
     }
 
-    // [추가] 순수홈관중 조회 실행 함수
-function showPureHomeStats() {
-    resetToAll();
-    currentFilter.type = 'pure_home';
-    
-    // UI 정리
-    const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
-    hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
-
-    const header = document.getElementById('dynamic-header');
-    header.style.display = "flex";
-    
-    // [수정] 헤더 타이틀 변경
-    document.getElementById('dynamic-title').innerText = `🏠 부천FC1995 홈경기에 함께한 순수 홈 관중 기록 (원정팬 제외)`;
-
-    // 1. 데이터 가공 (홈 경기 판정 및 수치 계산 강화)
-    pureHomeData = rawData.filter(m => {
-        // 부천이 홈팀인 경기만 필터링
-        const isHome = (m.hometeam || "").includes("부천");
-        const totalRaw = String(m.attendance || "0").replace(/,/g, '');
-        const awayRaw = String(m.away_fans || m.awayfans || "0").replace(/,/g, '');
+        // [핵심] 원정팬 조회 시 모든 검색 필터를 숨기는 로직 적용
+    function showPureHomeFans() {
+        resetToAll(); 
+        currentFilter.type = 'pure_fan'; 
         
-        const total = parseInt(totalRaw) || 0;
-        const away = parseInt(awayRaw) || 0;
-
-        // 전체 관중과 원정 관중 데이터가 둘 다 있는 2023년 이후 경기만 타겟팅
-        return isHome && total > 0 && away > 0;
-    }).map(m => {
-        const total = parseInt(String(m.attendance).replace(/,/g, '')) || 0;
-        const away = parseInt(String(m.away_fans || m.awayfans).replace(/,/g, '')) || 0;
-        const pureHomeCount = total - away;
-        const ratio = ((pureHomeCount / total) * 100).toFixed(1);
+        // 1. 모든 팀 필터 영역 숨김
+        document.getElementById('team-filter-1').style.display = 'none';
+        document.getElementById('team-filter-2').style.display = 'none';
+        document.getElementById('team-notice').style.display = 'none';
         
-        return { ...m, pure_home_count: pureHomeCount, pure_home_ratio: parseFloat(ratio) };
-    });
-
-    // 2. 통계 요약
-    let totalPure = 0;
-    pureHomeData.forEach(m => totalPure += m.pure_home_count);
-    const avgPure = pureHomeData.length > 0 ? Math.round(totalPure / pureHomeData.length) : 0;
-
-    // [수정] 요약 바 문구 
-    const summary = document.getElementById('dynamic-summary');
-    summary.innerHTML = `조회 결과: <span>총 ${pureHomeData.length}경기</span> 누적 순수 홈 관중 <span>${totalPure.toLocaleString()}명</span> (평균 ${avgPure.toLocaleString()}명)`;
-    summary.innerHTML += `
-        <div style="margin-top: 8px; font-size: 0.85rem; color: #666; font-weight: normal; line-height: 1.5;">
-            • 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.<br>
-            • 전체 관중에서 원정석 관중을 제외한 수치이며, 점유율(%)은 홈 팬의 비중입니다.
-        </div>`;
-    summary.style.display = 'block';
-
-    // 3. 렌더링
-    pureHomeData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    renderPureHomeTable(pureHomeData);
-}
-
-    function renderPureHomeTable(data) {
-    document.getElementById('table-head').innerHTML = `
-        <tr>
-            <th onclick="sortPureHome('date')" style="cursor:pointer">날짜 ↕</th>
-            <th>대회</th>
-            <th>상대</th>
-            <th>장소</th>
-            <th>스코어</th>
-            <th>결과</th>
-            <th onclick="sortPureHome('pure_home_count')" style="cursor:pointer">순수 홈관중 (점유율) ↕</th>
-            <th>감독</th>
-        </tr>`;
+        // 2. 선수 섹션 숨김
+        document.getElementById('player-section').style.display = 'none';
+        
+        // 3. 버튼 상태 동기화
+        const btn = document.getElementById('btn-away-fan'); if(btn) btn.className = 'away-btn active';
+        document.getElementById('mode-t').className = 'mode-btn';
+        document.getElementById('mode-p').className = 'mode-btn';
+        
+        sortState = { column: 'purefan', direction: 'desc' };
+        updateView();
+    }
     
-    document.getElementById('table-body').innerHTML = data.map(m => {
-        const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-        const res = hS > aS ? "승" : (hS < aS ? "패" : "무");
-        return `<tr>
-            <td>${m.date}</td>
-            <td>${m.league}</td>
-            <td>${m.awayteam}</td>
-            <td>${m.stadium||"-"}</td>
-            <td>${hS}:${aS}</td>
-            <td style="color:${res==='승'?'#ed1c24':(res==='패'?'#333':'#666')}; font-weight:bold;">${res}</td>
-            <td style="color:#ed1c24; font-weight:bold;">
-                ${m.pure_home_count.toLocaleString()} <small style="color:#888; font-weight:normal;">(${m.pure_home_ratio}%)</small>
-            </td>
-            <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
-        </tr>`;
-    }).join('');
-}
-
-// 정렬 상태 관리 및 실행
-let pureHomeSortState = { col: 'date', desc: true };
-function sortPureHome(col) {
-    pureHomeSortState.desc = (pureHomeSortState.col === col) ? !pureHomeSortState.desc : true;
-    pureHomeSortState.col = col;
-
-    pureHomeData.sort((a, b) => {
-        let v1 = a[col], v2 = b[col];
-        if (col === 'date') { v1 = new Date(v1); v2 = new Date(v2); }
-        return pureHomeSortState.desc ? v2 - v1 : v1 - v2;
-    });
-    renderPureHomeTable(pureHomeData);
-}
 
     function updateView() { if (currentMode === 'team' || currentFilter.type) renderTeamTable(); else { if (isTotalRankMode) renderAllRankingsTable(); else renderPlayerTable(); } }
 
@@ -969,6 +891,7 @@ function sortPureHome(col) {
 </script>
 </body>
 </html>
+
 
 
 
