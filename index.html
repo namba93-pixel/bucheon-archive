@@ -207,7 +207,11 @@
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
+            <div class="filter-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+    <button onclick="showAwayFanStats()" style="flex: 1; padding: 10px;">원정관중수 조회</button>
+    
+    <button onclick="showPureHomeStats()" style="flex: 1; padding: 10px;">순수홈관중 조회</button>
+</div>
         </div>
         <div id="team-notice" class="data-notice">
             <b>💡 데이터 안내</b><br>
@@ -859,6 +863,7 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
+
 
 
 
