@@ -188,6 +188,20 @@
 </div>
 
 <div class="container">
+    <div class="filter-item" style="width: 100%; margin-bottom: 20px;">
+        <label style="font-weight: bold; color: var(--bfc-red);">🤖 BFC DATA AI 스마트 검색</label>
+        <div style="display: flex; gap: 8px; margin-top: 5px;">
+            <input type="text" id="ai-search-input" 
+                   placeholder="예: 2024년 5월 경기결과, 연속 무실점, 시즌별 평균관중, 이영민 감독 홈경기" 
+                   style="flex: 1; padding: 12px; border: 2px solid #ccc; border-radius: 6px; font-size: 1rem;"
+                   onkeyup="if(event.key === 'Enter') executeAISearch()" autocomplete="off">
+            <button onclick="executeAISearch()" 
+                    style="padding: 12px 24px; background: var(--bfc-red); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem;">
+                검색
+            </button>
+        </div>
+    </div>
+
     <div id="team-section">
         <div id="team-filter-1" class="filter-container">
             <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
@@ -268,7 +282,7 @@
 
 <footer>
     <p>부천FC1995 데이터 포털은 개인이 운영하는 페이지입니다. <br> 
-    대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 있을 수 있습니다. <br> 
+    대한축구협회, 한국프로축구연맹 공식기록을 바탕으로 최대한의 정확성을 추구하나 자료에 오류가 일 수 있습니다. <br> 
     문의사항이나 오류 발견사항이 있으실 경우 아래 메일로 연락 부탁드립니다. <br> 
     문의: bfc.dataportal@gmail.com <br> 
     © 2026 BFC1995 DATA PORTAL. All Rights Reserved.</p>
@@ -295,9 +309,8 @@
         calculateStreaks()
     }
 
-    let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
+    let allWinStreaks = [], allUndefeatedStreaks = [];
 
-// 1. 데이터 계산 및 배너 업데이트 함수
 function calculateStreaks() {
     if (!rawData || rawData.length === 0) return;
 
@@ -321,16 +334,13 @@ function calculateStreaks() {
     if (activeWin > 0) winGroups.push({ count: activeWin, games: [...tempWin], active: true });
     if (activeUndef > 0) undefGroups.push({ count: activeUndef, games: [...tempUndef], active: true });
 
-    // 연승 최다치 및 무패 TOP 3 수치 계산
     const maxWin = winGroups.length > 0 ? Math.max(...winGroups.map(x => x.count)) : 0;
     const uniqueUndef = [...new Set(undefGroups.map(g => g.count))].sort((a, b) => b - a);
     const top3Counts = uniqueUndef.length > 0 ? uniqueUndef.slice(0, 3) : [0];
 
-    // 상세 페이지용 전역 변수에 저장
     allWinStreaks = winGroups.filter(g => g.count === maxWin);
     allUndefeatedStreaks = undefGroups.filter(g => top3Counts.includes(g.count)).sort((a, b) => b.count - a.count);
 
-    // 배너 UI 업데이트 (조건부 노출)
     const winCard = document.querySelector('.streak-card[onclick*="win"]');
     const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
 
@@ -346,12 +356,10 @@ function calculateStreaks() {
     }
 }
 
-// 2. 상세 기록 조회 함수 (📍 구분행 + 무패 TOP 3 포함)
 function showStreakView(type) {
     resetToAll();
     currentFilter.type = 'streak_view';
     
-    // 타 섹션 숨김
     const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
     hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
 
@@ -376,7 +384,6 @@ function showStreakView(type) {
         if (group.count !== lastCount) { currentRank++; lastCount = group.count; }
         const sortedGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        // 📍 구간 구분행 (1위는 레드, 나머지는 다크 그레이)
         const rowColor = (type === 'undef' && currentRank === 1) || (type === 'win') ? '#ed1c24' : '#555';
         html += `<tr style="background:#f8f9fa; border-top:2px solid ${rowColor};">
                     <td colspan="8" style="padding:15px; font-weight:800; color:${rowColor}; text-align:left;">
@@ -394,6 +401,325 @@ function showStreakView(type) {
     document.getElementById('table-body').innerHTML = html;
 }
 
+// ==========================================
+// [AI 스마트 검색 엔진 모듈] - 사용자의 8가지 규칙 통합
+// ==========================================
+function executeAISearch() {
+    const query = document.getElementById('ai-search-input').value.trim();
+    if (!query) return;
+
+    const header = document.getElementById('dynamic-header');
+    const titleEl = document.getElementById('dynamic-title');
+    const summary = document.getElementById('dynamic-summary');
+    const thead = document.getElementById('table-head');
+    const tbody = document.getElementById('table-body');
+    const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
+
+    // [규칙 8] 공통 UI 헬퍼 - 검색 성공 메시지
+    function setupUI(title, message, resultStats = "") {
+        resetToAll();
+        currentFilter.type = 'ai_search_result';
+        hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+        header.style.display = "flex";
+        titleEl.innerText = title;
+        summary.innerHTML = `<span style="color:var(--bfc-red);"><b>[AI 검색 완료]</b> 검색하신 '${query}' 내용에 대한 결과입니다.</span><br>
+                             <span style="font-size:0.85rem; color:#666;">${message}</span>
+                             ${resultStats ? `<div style="margin-top:8px; font-weight:bold; color:var(--bfc-red);">${resultStats}</div>` : ''}`;
+        summary.style.display = 'block';
+    }
+
+    // [규칙 8] 검색 실패 메시지
+    function showFailure() {
+        resetToAll();
+        hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+        header.style.display = "flex";
+        titleEl.innerText = `🤖 검색 결과가 없습니다`;
+        summary.innerHTML = `<span style="color:var(--bfc-red);"><b>[AI 검색 실패]</b> 검색하신 '${query}' 내용에 대해 <b>해당 기능은 아직 제공하지 않습니다.</b></span><br>
+                             <span style="font-size:0.85rem; color:#666;">다른 검색어를 입력해 주세요.</span>`;
+        summary.style.display = 'block';
+        thead.innerHTML = '';
+        tbody.innerHTML = `<tr><td style="padding:40px; text-align:center; color:#999;">결과가 없습니다.</td></tr>`;
+    }
+
+    function renderStandardTable(data) {
+        thead.innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="padding:40px; text-align:center; color:#999;">조건에 맞는 데이터가 없습니다.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(m => {
+            const isH = (m.hometeam || "").includes("부천");
+            const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+            const myS = isH ? hS : aS, opS = isH ? aS : hS;
+            const res = myS > opS ? "승" : (myS < opS ? "패" : "무");
+            return `<tr>
+                <td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${isH ? m.awayteam : m.hometeam}')">${isH ? m.awayteam : m.hometeam}</b></td><td>${m.stadium||"-"}</td>
+                <td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ------------------------------------------
+    // [규칙 6] 원정팬수를 뺀 순수 홈관중수 계산
+    // ------------------------------------------
+    if (query.includes('순수') && query.includes('홈')) {
+        const homeGames = rawData.filter(m => (m.hometeam || "").includes("부천"));
+        let validGames = [];
+        let totalPure = 0;
+        homeGames.forEach(m => {
+            const total = parseInt(String(m.attendance||"0").replace(/[^0-9]/g, '')) || 0;
+            const away = parseInt(String(m.away_fans||m.awayfans||"0").replace(/[^0-9]/g, '')) || 0;
+            if (total > 0 && away > 0 && total >= away) {
+                const pure = total - away;
+                totalPure += pure;
+                validGames.push({ ...m, pureHome: pure, ratio: ((pure/total)*100).toFixed(1) });
+            }
+        });
+        validGames.sort((a,b) => new Date(b.date) - new Date(a.date));
+        const avg = validGames.length > 0 ? Math.round(totalPure / validGames.length) : 0;
+        
+        setupUI('🏠 역대 순수 홈 관중 기록 (원정팬 제외)', '전체 관중에서 원정석 관중을 제외한 수치입니다.', 
+                `총 ${validGames.length}경기 | 누적 ${totalPure.toLocaleString()}명 (평균 ${avg.toLocaleString()}명)`);
+        thead.innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>결과</th><th>순수 홈관중 (점유율)</th><th>감독</th></tr>`;
+        tbody.innerHTML = validGames.map(m => {
+            const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+            const res = hS > aS ? "승" : (hS < aS ? "패" : "무");
+            return `<tr>
+                <td>${m.date}</td><td>${m.league}</td><td>${m.awayteam}</td><td>${m.stadium||"-"}</td>
+                <td class="${res==='승'?'win':''}">${res}</td>
+                <td style="color:var(--bfc-red); font-weight:bold;">${m.pureHome.toLocaleString()} <span style="color:#888; font-size:0.75rem;">(${m.ratio}%)</span></td>
+                <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+            </tr>`;
+        }).join('');
+        return;
+    }
+
+    // ------------------------------------------
+    // [규칙 7] 시즌별 평균관중수 계산
+    // ------------------------------------------
+    if (query.includes('평균관중') || query.includes('평균 관중')) {
+        const seasonStats = {};
+        rawData.filter(m => (m.hometeam || "").includes("부천")).forEach(m => {
+            if(!m.date) return;
+            const y = m.date.substring(0,4);
+            if(!seasonStats[y]) seasonStats[y] = { totalGames: 0, validGames: 0, sumAtt: 0 };
+            seasonStats[y].totalGames++;
+            const att = parseInt(String(m.attendance||"0").replace(/[^0-9]/g, '')) || 0;
+            if(att > 0) {
+                seasonStats[y].validGames++;
+                seasonStats[y].sumAtt += att;
+            }
+        });
+        const seasonArray = Object.keys(seasonStats).sort((a,b) => b - a).map(y => {
+            const s = seasonStats[y];
+            s.year = y;
+            s.avg = s.validGames > 0 ? Math.round(s.sumAtt / s.validGames) : 0;
+            return s;
+        });
+        setupUI('📊 시즌별 평균 홈 관중수 기록', '부천FC1995 역대 시즌별 홈경기 평균 관중 현황입니다.');
+        thead.innerHTML = `<tr><th>시즌 (연도)</th><th>총 홈경기수</th><th>관중집계 경기수</th><th>누적 관중수</th><th>시즌 평균 관중수</th></tr>`;
+        tbody.innerHTML = seasonArray.map(s => `
+            <tr>
+                <td style="font-weight:bold;">${s.year}년</td><td>${s.totalGames}경기</td><td>${s.validGames}경기</td>
+                <td>${s.sumAtt.toLocaleString()}명</td><td style="color:var(--bfc-red); font-weight:bold; font-size:1.1rem;">${s.avg.toLocaleString()}명</td>
+            </tr>`).join('');
+        return;
+    }
+
+    // ------------------------------------------
+    // [규칙 4] 연속 클린시트
+    // ------------------------------------------
+    if (query.includes('연속') && (query.includes('클린시트') || query.includes('무실점'))) {
+        const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
+        let streaks = [];
+        let temp = [];
+        sortedData.forEach(m => {
+            const isH = (m.hometeam || "").includes("부천");
+            const opS = isH ? (parseInt(m.awayscored)||0) : (parseInt(m.homescored)||0);
+            if (opS === 0) temp.push(m);
+            else { if (temp.length >= 2) streaks.push({ count: temp.length, games: [...temp] }); temp = []; }
+        });
+        if (temp.length >= 2) streaks.push({ count: temp.length, games: [...temp] });
+        streaks.sort((a, b) => b.count - a.count);
+        const topStreaks = streaks.slice(0, 10);
+        
+        setupUI('🧤 역대 연속 무실점(클린시트) 기록', '2경기 이상 연속으로 실점하지 않은 구간 순위입니다.');
+        thead.innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
+        let html = "";
+        topStreaks.forEach((group, index) => {
+            html += `<tr style="background:#f8f9fa; border-top:2px solid ${index===0?'#ed1c24':'#555'};">
+                        <td colspan="8" style="padding:15px; font-weight:800; color:${index===0?'#ed1c24':'#555'}; text-align:left;">
+                            [${index + 1}위 기록 - ${group.count}경기 연속 무실점] 📍 (${group.games[0].date} ~ ${group.games[group.games.length-1].date})
+                        </td>
+                     </tr>`;
+            html += group.games.map(m => {
+                const isH = (m.hometeam || "").includes("부천");
+                const hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
+                const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
+                return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
+            }).join('');
+        });
+        tbody.innerHTML = html;
+        return;
+    }
+
+    // ------------------------------------------
+    // [규칙 3] 무실점 경기
+    // ------------------------------------------
+    if (query.includes('무실점') || query.includes('클린시트')) {
+        const csGames = rawData.filter(m => {
+            const isH = (m.hometeam || "").includes("부천");
+            const opS = isH ? (parseInt(m.awayscored)||0) : (parseInt(m.homescored)||0);
+            return opS === 0;
+        }).sort((a,b) => new Date(b.date) - new Date(a.date));
+        setupUI('🧤 역대 무실점(클린시트) 경기 기록', '상대팀에게 1골도 허용하지 않은 경기 목록입니다.', `총 ${csGames.length}경기 달성`);
+        renderStandardTable(csGames);
+        return;
+    }
+
+    // ------------------------------------------
+    // [규칙 5] 통산 홈/원정 기록 및 승률
+    // ------------------------------------------
+    if (query.includes('통산') && (query.includes('홈') || query.includes('원정'))) {
+        const isHomeReq = query.includes('홈');
+        const targetGames = rawData.filter(m => {
+            const isH = (m.hometeam || "").includes("부천");
+            return isHomeReq ? isH : !isH;
+        });
+        let w=0, d=0, l=0, gf=0, ga=0;
+        targetGames.forEach(m => {
+            const isH = (m.hometeam || "").includes("부천");
+            const myS = isH ? (parseInt(m.homescored)||0) : (parseInt(m.awayscored)||0);
+            const opS = isH ? (parseInt(m.awayscored)||0) : (parseInt(m.homescored)||0);
+            gf += myS; ga += opS;
+            if (myS > opS) w++; else if (myS < opS) l++; else d++;
+        });
+        const total = targetGames.length;
+        const rate = total > 0 ? (((w + d * 0.5) / total) * 100).toFixed(1) : "0.0";
+        const locStr = isHomeReq ? '홈' : '원정';
+        setupUI(`🏟️ 통산 ${locStr}경기 기록 및 승률`, `부천FC1995 역대 모든 ${locStr}경기 합산 전적입니다.`,
+                `${total}전 ${w}승 ${d}무 ${l}패 (${gf}득점 ${ga}실점) | 승률: ${rate}%`);
+        targetGames.sort((a,b) => new Date(b.date) - new Date(a.date));
+        renderStandardTable(targetGames);
+        return;
+    }
+
+    // ------------------------------------------
+    // [규칙 1 & 2] a~b년 x월 / a년 x월 / x월 경기결과
+    // ------------------------------------------
+    const monthMatch = query.match(/(\d{1,2})월/);
+    const yearRangeMatch = query.match(/(\d{4})\s*[~-]\s*(\d{4})년/);
+    const yearSingleMatch = !yearRangeMatch ? query.match(/(\d{4})년/) : null;
+
+    if (monthMatch) {
+        const m = parseInt(monthMatch[1]);
+        let startY = 0, endY = 9999;
+        let rangeTitle = `역대`;
+        if (yearRangeMatch) {
+            startY = parseInt(yearRangeMatch[1]);
+            endY = parseInt(yearRangeMatch[2]);
+            rangeTitle = `${startY}~${endY}년`;
+        } else if (yearSingleMatch) {
+            startY = parseInt(yearSingleMatch[1]);
+            endY = startY;
+            rangeTitle = `${startY}년`;
+        }
+        const monthGames = rawData.filter(game => {
+            if(!game.date) return false;
+            const parts = game.date.split('-');
+            if(parts.length < 2) return false;
+            const gameY = parseInt(parts[0]);
+            const gameM = parseInt(parts[1]);
+            return gameM === m && gameY >= startY && gameY <= endY;
+        }).sort((a,b) => new Date(b.date) - new Date(a.date));
+        let w=0, d=0, l=0;
+        monthGames.forEach(game => {
+            const isH = (game.hometeam || "").includes("부천");
+            const myS = isH ? (parseInt(game.homescored)||0) : (parseInt(game.awayscored)||0);
+            const opS = isH ? (parseInt(game.awayscored)||0) : (parseInt(game.homescored)||0);
+            if (myS > opS) w++; else if (myS < opS) l++; else d++;
+        });
+        setupUI(`📅 ${rangeTitle} ${m}월 경기 결과`, `지정하신 기간의 ${m}월 경기 목록입니다.`, `총 ${monthGames.length}경기 (${w}승 ${d}무 ${l}패)`);
+        renderStandardTable(monthGames);
+        return;
+    }
+
+    // ------------------------------------------
+    // (기존 기능) 원정관중 & HISTORICAL & 선수 랭킹
+    // ------------------------------------------
+    if (query.includes('원정관중')) {
+        showAwayFanSection();
+        summary.innerHTML = `<span style="color:var(--bfc-red);"><b>[AI 검색 완료]</b> 검색하신 '${query}' 내용에 대한 결과입니다.</span><br>` + summary.innerHTML;
+        return;
+    }
+    if ((query.includes('3월') && query.includes('홈')) || query.includes('HISTORICAL') || query.includes('히스토리컬')) {
+        showHistoricalPoint();
+        summary.innerHTML = `<span style="color:var(--bfc-red);"><b>[AI 검색 완료]</b> 검색하신 '${query}' 내용에 대한 결과입니다.</span><br>` + summary.innerHTML;
+        return;
+    }
+    if (query.includes('순위') || query.includes('랭킹') || query.includes('기록')) {
+        switchMode('player');
+        if (query.includes('출전') || query.includes('경기')) showAllRankings('match');
+        else if (query.includes('득점') || query.includes('골')) showAllRankings('goal');
+        else if (query.includes('도움') || query.includes('어시')) showAllRankings('assist');
+        else if (query.includes('포인트') || query.includes('공격포인트') || query.includes('ap')) showAllRankings('ap');
+        else if (query.includes('클린시트') || query.includes('무실점')) showAllRankings('cs');
+        else showAllRankings('match');
+        
+        setTimeout(() => {
+            const h = document.getElementById('dynamic-header');
+            const s = document.getElementById('dynamic-summary');
+            if(h && s) {
+                h.style.display = 'flex';
+                s.style.display = 'block';
+                s.innerHTML = `<span style="color:var(--bfc-red);"><b>[AI 검색 완료]</b> 검색하신 '${query}' 내용에 대한 결과입니다.</span>`;
+            }
+        }, 100);
+        return;
+    }
+
+    // ------------------------------------------
+    // (기존 필터) 감독, 팀명, 연도 일반 검색
+    // ------------------------------------------
+    let isFilterMatched = false;
+    switchMode('team');
+    resetToAll(); 
+    
+    if (query.includes('홈')) { document.getElementById('select-location').value = 'home'; isFilterMatched = true; }
+    else if (query.includes('원정')) { document.getElementById('select-location').value = 'away'; isFilterMatched = true; }
+
+    if (yearSingleMatch) { document.getElementById('select-year').value = yearSingleMatch[1]; isFilterMatched = true; }
+
+    const bfcManagers = ['이영민', '송선호', '남기일', '조민국', '윤정춘', '곽경근'];
+    bfcManagers.forEach(mgr => { if (query.includes(mgr)) { document.getElementById('select-manager').value = mgr; isFilterMatched = true; } });
+
+    const kLeagueTeams = ['안양', '부산', '수원', '전남', '김포', '성남', '충남아산', '아산', '경남', '서울이랜드', '이랜드', '안산', '천안', '청주', '인천', '전북', '울산', '포항', '대구', '대전', '광주', '제주', '상주', '김천'];
+    kLeagueTeams.forEach(team => {
+        if (query.includes(team)) {
+            let targetTeam = team;
+            if (team === '수원' && query.includes('삼성')) targetTeam = '수원 삼성';
+            else if (team === '수원' && query.includes('FC')) targetTeam = '수원FC';
+            document.getElementById('search-opponent').value = targetTeam;
+            isFilterMatched = true;
+        }
+    });
+
+    if (query.includes('리그1')) { document.getElementById('select-league').value = 'K리그1'; isFilterMatched = true; }
+    else if (query.includes('리그2') || query.includes('리그')) { document.getElementById('select-league').value = 'K리그2'; isFilterMatched = true; }
+    if (query.includes('FA컵') || query.includes('코리아컵')) { document.getElementById('select-league').value = '코리아컵'; isFilterMatched = true; }
+    if (query.includes('플레이오프')) { document.getElementById('select-league').value = '플레이오프'; isFilterMatched = true; }
+
+    if (isFilterMatched) {
+        updateView();
+        summary.innerHTML = `<span style="color:var(--bfc-red);"><b>[AI 검색 완료]</b> 검색하신 '${query}' 내용에 대한 결과입니다.</span><br>` + summary.innerHTML;
+        return;
+    }
+
+    // ------------------------------------------
+    // [규칙 8] 매칭되는 규칙이 없는 경우 (예외처리)
+    // ------------------------------------------
+    showFailure();
+}
 
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
