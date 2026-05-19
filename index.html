@@ -276,96 +276,7 @@
 
 <script>
     const TEAM_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTLnO6CTQkcgJTDHr0MNJAA5xUCCWSqWSq-fgvJkEIGRrOBH1D9EXNXJLxIAriWiQ1oMrSKxTq6Y8m/pub?gid=0&single=true&output=csv";
-    const PLAYER_URL = "https://docs.google.com/spreadsheets/d/// AI 스마트 검색 실행 함수
-function executeAISearch() {
-    const query = document.getElementById('ai-search-input').value.trim();
-    if (!query) return;
-
-    // 1. 특정 전용 페이지 기능 선제 필터링
-    if (query.includes('순수') && query.includes('홈')) {
-        if (typeof showPureHomeStats === 'function') {
-            showPureHomeStats();
-            return;
-        }
-    }
-    if (query.includes('원정관중')) {
-        if (typeof showAwayFanSection === 'function') {
-            showAwayFanSection();
-            return;
-        }
-    }
-    if ((query.includes('3월') && query.includes('홈')) || query.includes('HISTORICAL') || query.includes('히스토리컬')) {
-        if (typeof showHistoricalPoint === 'function') {
-            showHistoricalPoint();
-            return;
-        }
-    }
-
-    // 2. 기본 조건 필터 초기화 (기존 currentFilter 구조에 맞춤)
-    currentFilter = {
-        type: 'all',
-        loc: 'all',
-        year: '',
-        bfcMgr: '',
-        tOpp: '',
-        league: '',
-        oppMgr: '',
-        ref: ''
-    };
-
-    // 3. 문장 분석 (자연어 파싱)
-    
-    // 장소(홈/원정) 판단
-    if (query.includes('홈')) currentFilter.loc = 'home';
-    else if (query.includes('원정')) currentFilter.loc = 'away';
-
-    // 시즌(연도) 판단: 숫자 4자리 추출 (예: 2024년 -> 2024)
-    const yearMatch = query.match(/\d{4}/);
-    if (yearMatch) currentFilter.year = yearMatch[0];
-
-    // 부천FC 감독 사전 매칭
-    const bfcManagers = ['이영민', '송선호', '남기일', '조민국', '윤정춘', '곽경근'];
-    bfcManagers.forEach(mgr => {
-        if (query.includes(mgr)) currentFilter.bfcMgr = mgr;
-    });
-
-    // 주요 상대 팀 사전 매칭
-    const kLeagueTeams = ['안양', '부산', '수원', '전남', '김포', '성남', '충남아산', '아산', '경남', '서울이랜드', '이랜드', '안산', '천안', '청주', '인천', '전북', '울산', '포항', '대구', '대전', '광주', '제주', '상주', '김천'];
-    kLeagueTeams.forEach(team => {
-        if (query.includes(team)) {
-            // '수원 삼성'과 '수원FC' 예외 처리 대책
-            if (team === '수원' && query.includes('삼성')) currentFilter.tOpp = '수원 삼성';
-            else if (team === '수원' && query.includes('FC')) currentFilter.tOpp = '수원FC';
-            else currentFilter.tOpp = team;
-        }
-    });
-
-    // 대회(리그/컵) 판단
-    if (query.includes('리그')) currentFilter.league = 'K리그2'; // 데이터 입력 형태에 맞게 조정 (K리그1, K리그2 등)
-    if (query.includes('FA컵') || query.includes('코리아컵')) currentFilter.league = '코리아컵';
-
-    // 4. 추출된 조건으로 기존 조회 함수 호출하기
-    // 성현님이 기존에 쓰시던 전체 필터링 후 테이블을 갱신하는 핵심 함수명을 적어주세요.
-    // 보통은 'applyFilters()' 혹은 'filterData()' 같은 형태로 구현되어 있습니다.
-    if (typeof applyFilters === 'function') {
-        applyFilters(); 
-    } else {
-        // 만약 공통 필터 함수가 없다면, 기존 필터링 및 renderTeamTable 로직을 작동시킵니다.
-        const filtered = rawData.filter(m => {
-            if (currentFilter.loc === 'home' && !(m.hometeam || "").includes("부천")) return false;
-            if (currentFilter.loc === 'away' && (m.hometeam || "").includes("부천")) return false;
-            if (currentFilter.year && !(m.date || "").includes(currentFilter.year)) return false;
-            if (currentFilter.bfcMgr && m.bfcmanager !== currentFilter.bfcMgr && m.bfc_manager !== currentFilter.bfcMgr) return false;
-            if (currentFilter.tOpp && !(m.hometeam + m.awayteam).includes(currentFilter.tOpp)) return false;
-            if (currentFilter.league && !(m.league || "").includes(currentFilter.league)) return false;
-            return true;
-        });
-        
-        // 동적 타이틀 생성 및 테이블 렌더링 호출
-        updateDynamicTitle(); // 지난번에 고도화한 타이틀 로직 함수명
-        renderTeamTable(filtered); // 기존 테이블 그리기 함수명
-    }
-}e/2PACX-1vQTLnO6CTQkcgJTDHr0MNJAA5xUCCWSqWSq-fgvJkEIGRrOBH1D9EXNXJLxIAriWiQ1oMrSKxTq6Y8m/pub?gid=1150204300&single=true&output=csv";
+    const PLAYER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTLnO6CTQkcgJTDHr0MNJAA5xUCCWSqWSq-fgvJkEIGRrOBH1D9EXNXJLxIAriWiQ1oMrSKxTq6Y8m/pub?gid=1150204300&single=true&output=csv";
     
     let rawData = [], playerSeasonData = [], currentMode = 'team';
     let sortState = { column: 'date', direction: 'desc' };
@@ -865,53 +776,7 @@ function sortHistoricalPoint(col) {
     } 
     renderAllRankingsTable(); 
 }
-    function renderAllRankingsTable() { 
-    // 헤더 정의 (ap 클릭 시 정상적으로 toggleSortTotal('ap')를 호출하는지 확인)
-    document.getElementById('table-head').innerHTML = `
-        <tr>
-            <th>순위</th>
-            <th>이름</th>
-            <th onclick="toggleSortTotal('match')" style="cursor:pointer">통산출전 ↕</th>
-            <th onclick="toggleSortTotal('goal')" style="cursor:pointer">통산득점 ↕</th>
-            <th onclick="toggleSortTotal('assist')" style="cursor:pointer">도움 ↕</th>
-            <th onclick="toggleSortTotal('ap')" style="cursor:pointer">포인트 ↕</th>
-            <th onclick="toggleSortTotal('cs')" style="cursor:pointer">클린시트 ↕</th>
-            <th>소속시즌</th>
-        </tr>`; 
-
-    const t = {}; 
-    playerSeasonData.forEach(d => { 
-        if(!t[d.name]) {
-            t[d.name] = { name: d.name, match: 0, goal: 0, assist: 0, ap: 0, cs: 0, seasons: [] }; 
-        }
-        t[d.name].match += parseInt(d.match) || 0; 
-        t[d.name].goal += parseInt(d.goal) || 0; 
-        t[d.name].assist += parseInt(d.assist) || 0; 
-        // 각 시즌별 데이터를 더한 후 실시간으로 ap(공격포인트) 합산 반영
-        t[d.name].ap = t[d.name].goal + t[d.name].assist; 
-        t[d.name].cs += parseInt(d.cleansheet) || 0; 
-        
-        if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); 
-    }); 
-
-    // [정렬 보정] sortState.column이 'ap'일 때도 정확하게 수치 비교가 되도록 안전장치 처리
-    let currentColumn = sortState.column || 'match';
-    let sorted = Object.values(t).sort((a, b) => {
-        return (b[currentColumn] || 0) - (a[currentColumn] || 0);
-    }); 
-
-    document.getElementById('table-body').innerHTML = sorted.map((p, i) => `
-        <tr>
-            <td>${i+1}</td>
-            <td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td>
-            <td class="${currentColumn==='match'?'highlight-red':''}">${p.match}</td>
-            <td class="${currentColumn==='goal'?'highlight-red':''}">${p.goal}</td>
-            <td class="${currentColumn==='assist'?'highlight-red':''}">${p.assist}</td>
-            <td class="${currentColumn==='ap'?'highlight-red':''}">${p.ap}</td>
-            <td class="${currentColumn==='cs'?'highlight-red':''}">${p.cs}</td>
-            <td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td>
-        </tr>`).join(''); 
-}
+    function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
     function toggleSortTotal(col) { sortState.column = col; renderAllRankingsTable(); }
     function showPlayerTotal(name) { const pData = playerSeasonData.filter(p => p.name === name); const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); }); const apSum = tot.g + tot.a, sT = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0, cR = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00"; document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${sT}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>` + (isGK ? `<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${cR})</div></div>` : ""); document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex'; }
 
@@ -997,7 +862,6 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
-
 
 
 
