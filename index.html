@@ -188,6 +188,20 @@
 </div>
 
 <div class="container">
+    <div class="filter-item" style="width: 100%; margin-bottom: 20px;">
+        <label style="font-weight: bold; color: var(--bfc-red);">🤖 BFC DATA AI 스마트 검색</label>
+        <div style="display: flex; gap: 8px; margin-top: 5px;">
+            <input type="text" id="ai-search-input" 
+                   placeholder="예: 2024년 이영민 감독 홈경기 결과, 김포전 원정관중수, 공격포인트 순위" 
+                   style="flex: 1; padding: 12px; border: 2px solid #ccc; border-radius: 6px; font-size: 1rem;"
+                   onkeyup="if(event.key === 'Enter') executeAISearch()" autocomplete="off">
+            <button onclick="executeAISearch()" 
+                    style="padding: 12px 24px; background: var(--bfc-red); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem;">
+                검색
+            </button>
+        </div>
+    </div>
+
     <div id="team-section">
         <div id="team-filter-1" class="filter-container">
             <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
@@ -394,6 +408,58 @@ function showStreakView(type) {
     document.getElementById('table-body').innerHTML = html;
 }
 
+// [추가] AI 스마트 검색 실행 함수
+function executeAISearch() {
+    const query = document.getElementById('ai-search-input').value.trim();
+    if (!query) return;
+
+    if (query.includes('원정관중')) {
+        if (typeof showAwayFanSection === 'function') { showAwayFanSection(); return; }
+    }
+    if ((query.includes('3월') && query.includes('홈')) || query.includes('HISTORICAL') || query.includes('히스토리컬')) {
+        if (typeof showHistoricalPoint === 'function') { showHistoricalPoint(); return; }
+    }
+
+    if (query.includes('순위') || query.includes('랭킹') || query.includes('기록')) {
+        switchMode('player');
+        if (query.includes('출전') || query.includes('경기')) showAllRankings('match');
+        else if (query.includes('득점') || query.includes('골')) showAllRankings('goal');
+        else if (query.includes('도움') || query.includes('어시')) showAllRankings('assist');
+        else if (query.includes('포인트') || query.includes('공격포인트') || query.includes('ap')) showAllRankings('ap');
+        else if (query.includes('클린시트') || query.includes('무실점')) showAllRankings('cs');
+        else showAllRankings('match');
+        return;
+    }
+
+    switchMode('team');
+    resetToAll(); 
+    
+    if (query.includes('홈')) document.getElementById('select-location').value = 'home';
+    else if (query.includes('원정')) document.getElementById('select-location').value = 'away';
+
+    const yearMatch = query.match(/\d{4}/);
+    if (yearMatch) document.getElementById('select-year').value = yearMatch[0];
+
+    const bfcManagers = ['이영민', '송선호', '남기일', '조민국', '윤정춘', '곽경근'];
+    bfcManagers.forEach(mgr => { if (query.includes(mgr)) document.getElementById('select-manager').value = mgr; });
+
+    const kLeagueTeams = ['안양', '부산', '수원', '전남', '김포', '성남', '충남아산', '아산', '경남', '서울이랜드', '이랜드', '안산', '천안', '청주', '인천', '전북', '울산', '포항', '대구', '대전', '광주', '제주', '상주', '김천'];
+    kLeagueTeams.forEach(team => {
+        if (query.includes(team)) {
+            let targetTeam = team;
+            if (team === '수원' && query.includes('삼성')) targetTeam = '수원 삼성';
+            else if (team === '수원' && query.includes('FC')) targetTeam = '수원FC';
+            document.getElementById('search-opponent').value = targetTeam;
+        }
+    });
+
+    if (query.includes('리그1')) document.getElementById('select-league').value = 'K리그1';
+    else if (query.includes('리그2') || query.includes('리그')) document.getElementById('select-league').value = 'K리그2';
+    if (query.includes('FA컵') || query.includes('코리아컵')) document.getElementById('select-league').value = '코리아컵';
+    if (query.includes('플레이오프')) document.getElementById('select-league').value = '플레이오프';
+
+    updateView();
+}
 
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
