@@ -225,7 +225,7 @@
             <div class="ranking-container">
                 <div class="ranking-box"><h3>🏃‍♂️ 통산 출전 TOP 7</h3><button class="more-btn" onclick="showAllRankings('match')">more</button><div id="rank-match"></div></div>
                 <div class="ranking-box"><h3>⚽ 통산 득점 TOP 7</h3><button class="more-btn" onclick="showAllRankings('goal')">more</button><div id="rank-goal"></div></div>
-                <div class="ranking-box"><h3>🔥 공격포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
+                <div class="ranking-box"><h3>🔥 포인트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('ap')">more</button><div id="rank-ap"></div></div>
                 <div class="ranking-box"><h3>🧤 클린시트 TOP 7</h3><button class="more-btn" onclick="showAllRankings('cs')">more</button><div id="rank-cs"></div></div>
             </div>
         </div>
@@ -724,22 +724,22 @@ function sortHistoricalPoint(col) {
         let filtered = playerSeasonData.filter(p => (!year || p.season === year) && (!selectedPlayerSearchName || p.name === selectedPlayerSearchName) && selectedLeagues.includes(getUnifiedLeagueName(p.league)));
         const grouped = {};
         filtered.forEach(p => {
-            const key = `${p.name}_${p.season}`; if (!grouped[key]) grouped[key] = { name: p.name, season: p.season, match: 0, goal: 0, assist: 0, pk: 0, cs: 0, yc: 0, rc: 0, details: {} };
-            const uniLg = getUnifiedLeagueName(p.league); if (!grouped[key].details[uniLg]) grouped[key].details[uniLg] = { m: 0, g: 0, a: 0, pk: 0, cs: 0, yc: 0, rc: 0 };
-            grouped[key].match += parseInt(p.match)||0; grouped[key].goal += parseInt(p.goal)||0; grouped[key].assist += parseInt(p.assist)||0; grouped[key].pk += parseInt(p.pk)||0; grouped[key].cs += parseInt(p.cleansheet)||0; grouped[key].yc += parseInt(p.yc)||0; grouped[key].rc += parseInt(p.rc)||0;
-            grouped[key].details[uniLg].m += parseInt(p.match)||0; grouped[key].details[uniLg].g += parseInt(p.goal)||0; grouped[key].details[uniLg].a += parseInt(p.assist)||0; grouped[key].details[uniLg].pk += parseInt(p.pk)||0; grouped[key].details[uniLg].cs += parseInt(p.cleansheet)||0; grouped[key].details[uniLg].yc += parseInt(p.yc)||0; grouped[key].details[uniLg].rc += parseInt(p.rc)||0;
+            const key = `${p.name}_${p.season}`; if (!grouped[key]) grouped[key] = { name: p.name, season: p.season, match: 0, goal: 0, assist: 0, ap: 0, pk: 0, cs: 0, yc: 0, rc: 0, details: {} };
+            const uniLg = getUnifiedLeagueName(p.league); if (!grouped[key].details[uniLg]) grouped[key].details[uniLg] = { m: 0, g: 0, a: 0, ap: 0, pk: 0, cs: 0, yc: 0, rc: 0 };
+            grouped[key].match += parseInt(p.match)||0; grouped[key].goal += parseInt(p.goal)||0; grouped[key].assist += parseInt(p.assist)||0; grouped[key].ap += parseInt(p.ap)||0; grouped[key].pk += parseInt(p.pk)||0; grouped[key].cs += parseInt(p.cleansheet)||0; grouped[key].yc += parseInt(p.yc)||0; grouped[key].rc += parseInt(p.rc)||0;
+            grouped[key].details[uniLg].m += parseInt(p.match)||0; grouped[key].details[uniLg].g += parseInt(p.goal)||0; grouped[key].details[uniLg].a += parseInt(p.assist)||0; grouped[key].details[uniLg].ap += parseInt(p.ap)||0; grouped[key].details[uniLg].pk += parseInt(p.pk)||0; grouped[key].details[uniLg].cs += parseInt(p.cleansheet)||0; grouped[key].details[uniLg].yc += parseInt(p.yc)||0; grouped[key].details[uniLg].rc += parseInt(p.rc)||0;
         });
-        let dData = Object.values(grouped).sort((a,b) => sortState.column === 'season' ? (sortState.direction === 'asc' ? a.season - b.season : b.season - a.season) : (b[sortState.column] - a[sortState.column]));
+        let dData = Object.values(grouped).sort((a,b) => sortState.column === 'season' ? (sortState.direction === 'asc' ? a.season - b.season : b.season - a.season) : ((b[sortState.column]||0) - (a[sortState.column]||0)));
         document.getElementById('table-body').innerHTML = dData.map(p => {
             const shownLgs = Object.keys(p.details); const totalLgs = [...new Set(playerSeasonData.filter(d => d.name === p.name && d.season === p.season).map(d => getUnifiedLeagueName(d.league)))];
             const sumText = shownLgs.length === 1 ? shownLgs[0] : (totalLgs.every(lg => shownLgs.includes(lg)) ? "전체 시즌" : "일부 대회");
-            let dHtml = shownLgs.length > 1 ? Object.entries(p.details).sort(([,a],[,b])=>b.m-a.m).map(([lgN, d]) => `<tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;"><td style="border:none;"></td><td style="border:none;"></td><td style="text-align:left; padding-left:20px;">└ ${lgN}</td><td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${(parseInt(d.g)||0) + (parseInt(d.a)||0)}</td><td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td><td>${d.rc}</td></tr>`).join('') : "";
-            return `<tr style="${shownLgs.length > 1 ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${sumText}</td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${(parseInt(p.goal)||0) + (parseInt(p.assist)||0)}</td><td class="${sortState.column==='pk'?'highlight-red':''}">${p.pk}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td class="${sortState.column==='yc'?'highlight-red':''}">${p.yc}</td><td class="${sortState.column==='rc'?'highlight-red':''}">${p.rc}</td></tr>` + dHtml;
+            let dHtml = shownLgs.length > 1 ? Object.entries(p.details).sort(([,a],[,b])=>b.m-a.m).map(([lgN, d]) => `<tr style="font-size: 0.75rem; color: #888; background-color: #fafafa;"><td style="border:none;"></td><td style="border:none;"></td><td style="text-align:left; padding-left:20px;">└ ${lgN}</td><td>${d.m}</td><td>${d.g}</td><td>${d.a}</td><td>${d.ap}</td><td>${d.pk}</td><td>${d.cs}</td><td>${d.yc}</td><td>${d.rc}</td></tr>`).join('') : "";
+            return `<tr style="${shownLgs.length > 1 ? 'background-color: #fffde7;' : ''}"><td>${p.season}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td style="font-weight:bold; text-align:left;">${sumText}</td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='pk'?'highlight-red':''}">${p.pk}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td class="${sortState.column==='yc'?'highlight-red':''}">${p.yc}</td><td class="${sortState.column==='rc'?'highlight-red':''}">${p.rc}</td></tr>` + dHtml;
         }).join('');
     }
 
     function calculateTotalRankings() {
-        const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0 }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap = (parseInt(t[d.name].goal)||0) + (parseInt(t[d.name].assist)||0); t[d.name].cs += parseInt(d.cleansheet)||0; });
+        const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0 }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap += parseInt(d.ap)||0; t[d.name].cs += parseInt(d.cleansheet)||0; });
         const r = (id, k, u) => { const s = Object.values(t).sort((a,b) => b[k] !== a[k] ? b[k] - a[k] : a.match - b.match).slice(0, 7); document.getElementById(id).innerHTML = s.map((p,i) => `<div class="rank-item"><span>${i+1}. ${p.name}</span><b>${p[k]}${u}</b></div>`).join(''); };
         r('rank-match', 'match', '경기'); r('rank-goal', 'goal', '골'); r('rank-ap', 'ap', 'pt'); r('rank-cs', 'cs', '회');
     }
@@ -776,9 +776,9 @@ function sortHistoricalPoint(col) {
     } 
     renderAllRankingsTable(); 
 }
-    function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap += parseInt(d.ap || d.AP) || 0; t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => b[sortState.column] - a[sortState.column]); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
+    function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap += parseInt(d.ap)||0; t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => (b[sortState.column] || 0) - (a[sortState.column] || 0)); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
     function toggleSortTotal(col) { sortState.column = col; renderAllRankingsTable(); }
-    function showPlayerTotal(name) { const pData = playerSeasonData.filter(p => p.name === name); const tot = { m:0, g:0, a:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); }); const apSum = tot.g + tot.a, sT = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0, cR = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00"; document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${sT}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>` + (isGK ? `<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${cR})</div></div>` : ""); document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex'; }
+    function showPlayerTotal(name) { const pData = playerSeasonData.filter(p => p.name === name); const tot = { m:0, g:0, a:0, ap:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.ap += parseInt(d.ap)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); }); const apSum = tot.ap, sT = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0, cR = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00"; document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${sT}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>` + (isGK ? `<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${cR})</div></div>` : ""); document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex'; }
 
     function initFilters() {
         const tY = [...new Set(rawData.map(m => (m.date || "").substring(0,4)))].sort(); const yS = document.getElementById('select-year'); if(yS) { yS.innerHTML = '<option value="">전체 시즌</option>'; tY.forEach(y => yS.add(new Option(y + " 시즌", y))); }
@@ -862,33 +862,3 @@ function sortHistoricalPoint(col) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
