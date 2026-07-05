@@ -209,7 +209,14 @@
         <div id="team-filter-2" class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
-            <div class="filter-item"><label>주심 검색</label><input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off"><ul class="search-results"></ul></div>
+            <div class="filter-item">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <label style="margin-bottom: 0;">주심 검색</label>
+                    <button onclick="showRefereeStats()" style="padding: 3px 8px; background: var(--bfc-black); color: white; border: none; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; line-height: 1;">주심별 기록</button>
+                </div>
+                <input type="text" id="search-referee" placeholder="주심 이름 입력" onkeyup="showSuggestions(this, 'referee')" autocomplete="off">
+                <ul class="search-results"></ul>
+            </div>
             <div class="filter-item"><button id="btn-away-fan" class="away-btn" onclick="showAwayFanSection()">🚌 함께했던 원정관중수 조회</button></div>
         </div>
         <div id="team-notice" class="data-notice">
@@ -859,6 +866,137 @@ function sortHistoricalPoint(col) {
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
     function formatSeasons(years) { if (!years || years.length === 0) return ""; const nums = years.map(Number).sort((a, b) => a - b); let res = []; let s = nums[0], e = nums[0]; for (let i = 1; i <= nums.length; i++) { if (i < nums.length && nums[i] === e + 1) e = nums[i]; else { res.push(s === e ? String(s) : `${s}~${String(e).slice(-2)}`); if (i < nums.length) { s = nums[i]; e = nums[i]; } } } return res.join(', '); }
     window.onload = loadData;
+
+    // ==========================================
+// [추가 기능] 주심별 전적 통계 및 연동 시스템
+// ==========================================
+let refereeStatsData = [];
+let refereeSortState = { col: 'winRate', desc: true };
+
+// 1. 주심별 전적 뷰어 실행 함수
+function showRefereeStats() {
+    resetToAll();
+    currentFilter.type = 'referee_stats';
+    
+    // UI 정리
+    const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
+    hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+
+    const header = document.getElementById('dynamic-header');
+    header.style.display = "flex";
+    document.getElementById('dynamic-title').innerText = `⚖️ 부천FC1995 역대 주심별 배정 경기 전적 및 승률`;
+    
+    const summary = document.getElementById('dynamic-summary');
+    summary.innerHTML = `역대 부천FC1995 경기를 관장한 주심들의 전적을 승률순으로 표출합니다.<br>
+                         <span style="font-size:0.85rem; color:#666;">* 표에서 <b style="color:var(--bfc-red);">주심 이름</b>을 클릭하면 해당 주심이 배정된 모든 경기 결과를 상세 조회합니다.</span>`;
+    summary.style.display = 'block';
+
+    // 데이터 집계
+    const refMap = {};
+    rawData.forEach(m => {
+        let ref = (m.referee || "").trim();
+        if (!ref) return; // 주심 기록이 없는(과거) 데이터는 패스
+        
+        if (!refMap[ref]) {
+            refMap[ref] = { name: ref, match: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, winRate: 0 };
+        }
+        
+        const isH = (m.hometeam || "").includes("부천");
+        const hS = parseInt(m.homescored) || 0;
+        const aS = parseInt(m.awayscored) || 0;
+        const myS = isH ? hS : aS;
+        const opS = isH ? aS : hS;
+
+        refMap[ref].match++;
+        refMap[ref].gf += myS;
+        refMap[ref].ga += opS;
+        
+        if (myS > opS) refMap[ref].w++;
+        else if (myS < opS) refMap[ref].l++;
+        else refMap[ref].d++;
+    });
+
+    // K리그 공식 승률 계산 방식으로 객체 배열화
+    refereeStatsData = Object.values(refMap).map(r => {
+        r.winRate = r.match > 0 ? parseFloat((((r.w + r.d * 0.5) / r.match) * 100).toFixed(1)) : 0;
+        return r;
+    });
+
+    // 초기 정렬 (승률 높은 순 -> 승률 같으면 관장 경기 수 많은 순)
+    refereeStatsData.sort((a, b) => {
+        if (b.winRate === a.winRate) return b.match - a.match;
+        return b.winRate - a.winRate;
+    });
+    
+    refereeSortState = { col: 'winRate', desc: true };
+    renderRefereeStatsTable(refereeStatsData);
+}
+
+// 2. 주심 통계 테이블 렌더링 함수
+function renderRefereeStatsTable(data) {
+    document.getElementById('table-head').innerHTML = `
+        <tr>
+            <th>순위</th>
+            <th>주심 이름</th>
+            <th onclick="sortRefereeStats('match')" style="cursor:pointer">관장 경기수 ↕</th>
+            <th onclick="sortRefereeStats('w')" style="cursor:pointer">승 ↕</th>
+            <th onclick="sortRefereeStats('d')" style="cursor:pointer">무 ↕</th>
+            <th onclick="sortRefereeStats('l')" style="cursor:pointer">패 ↕</th>
+            <th onclick="sortRefereeStats('gf')" style="cursor:pointer">득점 ↕</th>
+            <th onclick="sortRefereeStats('ga')" style="cursor:pointer">실점 ↕</th>
+            <th onclick="sortRefereeStats('winRate')" style="cursor:pointer">승률(%) ↕</th>
+        </tr>`;
+    
+    if (data.length === 0) {
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="9" style="padding:40px; text-align:center; color:#999;">주심 기록이 없습니다.</td></tr>`;
+        return;
+    }
+
+    document.getElementById('table-body').innerHTML = data.map((r, i) => {
+        return `<tr>
+            <td>${i + 1}</td>
+            <td><b class="clickable" onclick="filterByReferee('${r.name}')" style="color:var(--bfc-red); font-size:1rem;">${r.name}</b></td>
+            <td>${r.match}</td>
+            <td>${r.w}</td>
+            <td>${r.d}</td>
+            <td>${r.l}</td>
+            <td>${r.gf}</td>
+            <td>${r.ga}</td>
+            <td style="font-weight:bold; color:${r.winRate >= 50 ? 'var(--bfc-red)' : '#333'}">${r.winRate.toFixed(1)}%</td>
+        </tr>`;
+    }).join('');
+}
+
+// 3. 주심 통계 전용 정렬 함수
+function sortRefereeStats(col) {
+    refereeSortState.desc = (refereeSortState.col === col) ? !refereeSortState.desc : true;
+    refereeSortState.col = col;
+
+    refereeStatsData.sort((a, b) => {
+        let v1 = a[col], v2 = b[col];
+        if (v1 === v2) {
+            // 주 정렬 값이 같을 경우 보조 정렬 (경기수 등)
+            if (col === 'winRate') return refereeSortState.desc ? (b.match - a.match) : (a.match - b.match);
+            return refereeSortState.desc ? (b.winRate - a.winRate) : (a.winRate - b.winRate);
+        }
+        return refereeSortState.desc ? v2 - v1 : v1 - v2;
+    });
+    renderRefereeStatsTable(refereeStatsData);
+}
+
+// 4. [핵심] 주심 이름 클릭 시 해당 주심의 모든 경기결과 조회로 점프하는 함수
+function filterByReferee(name) {
+    resetToAll(); // 화면 및 필터를 기본 '팀 기록' 모드로 초기화
+    
+    // 주심 검색 입력창에 이름 꽂아 넣기
+    const refInput = document.getElementById('search-referee');
+    if(refInput) {
+        refInput.value = name;
+    }
+    
+    // 기존의 막강한 조회 로직(updateView) 재활용 (동적 타이틀까지 알아서 변경됨)
+    updateView();
+}
 </script>
 </body>
 </html>
