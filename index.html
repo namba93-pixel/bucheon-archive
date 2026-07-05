@@ -296,12 +296,15 @@
             const [tRes, pRes] = await Promise.all([fetch(TEAM_URL + "&cb=" + Date.now()), fetch(PLAYER_URL + "&cb=" + Date.now())]);
             rawData = parseCSV(await tRes.text()); playerSeasonData = parseCSV(await pRes.text());
             const now = new Date(); document.getElementById('today-date').innerText = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 기준`;
+            
+            calculateMilestoneGoals(); // <--- [추가됨] 데이터를 불러오자마자 마일스톤 계산!
+            
             fixAllTimeStats(); calculateTotalRankings(); initFilters(); updateView();
         } catch (e) { console.error("Load Error", e); }
 
         calculateStreaks()
     }
-
+    
     let allWinStreaks = [], allUndefeatedStreaks = []; // 전역 변수 유지
 
 // 1. 데이터 계산 및 배너 업데이트 함수
@@ -717,9 +720,9 @@ function sortHistoricalPoint(col) {
             const displayOpponent = isH ? m.awayteam : m.hometeam;
             const val = isAwayMode ? (parseInt(m.awayfan)||0) : (parseInt(String(m.attendance).replace(/,/g,''))||0);
             
-            // [추가] 모달에 넘겨줄 경기 제목과 득점자 데이터 안전하게 추출 (시트의 bfc_scorers 열 인식)
+            // [수정됨] milestone_scorers 가 우선적으로 적용되도록 변경
             const matchTitle = isH ? `부천FC1995 vs ${displayOpponent}` : `${displayOpponent} vs 부천FC1995`;
-            const bfcScorers = m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
+            const bfcScorers = m.milestone_scorers || m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
 
             return `<tr>
                 <td>${m.date}</td>
@@ -1169,24 +1172,36 @@ window.addEventListener('DOMContentLoaded', () => {
     // ==========================================
 // [추가 기능] 경기 스코어 클릭 시 득점자 상세 정보 팝업
 // ==========================================
+// ==========================================
+// [수정된 기능] 경기 스코어 클릭 시 득점자 상세 정보 팝업 (마일스톤 배지 포함)
+// ==========================================
 function showMatchDetails(date, title, score, scorers) {
     let scorerHtml = '<div style="padding: 15px; color: #999; text-align: center;">득점 정보가 없습니다. (또는 무득점 경기)</div>';
 
-    // 득점자 데이터가 존재할 경우 쉼표로 쪼개서 리스트 생성
     if (scorers && scorers.trim() !== "") {
         const list = scorers.split(',').map(s => s.trim());
         scorerHtml = '<ul style="list-style:none; padding:0; margin:0; text-align:left;">';
+        
         list.forEach(s => {
-            // 자책골은 색상을 다르게 표현
-            const isOG = s.includes('자책골') ? 'style="color:#666;"' : 'style="color:var(--bfc-black); font-weight:bold;"';
-            scorerHtml += `<li style="padding: 10px 15px; border-bottom: 1px solid #eee; display:flex; align-items:center; gap:10px;">
-                                <span>⚽</span> <span ${isOG}>${s}</span>
+            let text = s;
+            let badge = "";
+            
+            // [핵심] 비밀 마커(@@숫자@@)가 있는지 확인하고 황금 배지로 변환
+            const milestoneMatch = s.match(/@@(\d+)@@/);
+            if (milestoneMatch) {
+                const milestoneNum = milestoneMatch[1];
+                text = s.replace(milestoneMatch[0], ''); // 텍스트에서 비밀 마커 삭제
+                badge = `<span style="background:linear-gradient(135deg, #ffd700, #ffb300); color:#000; padding:3px 10px; border-radius:15px; font-size:0.8rem; margin-left:8px; font-weight:900; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 1px solid #da9600; display:inline-block; animation: popIn 0.3s ease-out;">🏆 구단 통산 ${milestoneNum}호 골!</span>`;
+            }
+
+            const isOG = text.includes('자책골') ? 'style="color:#666;"' : 'style="color:var(--bfc-black); font-weight:bold;"';
+            scorerHtml += `<li style="padding: 12px 15px; border-bottom: 1px solid #eee; display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+                                <span>⚽</span> <span ${isOG}>${text}</span> ${badge}
                            </li>`;
         });
         scorerHtml += '</ul>';
     }
 
-    // 모달창 내부에 HTML 주입 (기존 선수 모달창 UI 완벽 재활용)
     document.getElementById('modal-data').innerHTML = `
         <div class="modal-header" style="grid-column: span 2; margin-bottom: 10px; padding-bottom:15px;">
             <h2 style="font-size: 1.4rem; color:var(--bfc-red);">${title}</h2>
@@ -1202,9 +1217,39 @@ function showMatchDetails(date, title, score, scorers) {
         </div>
     `;
     
-    // 모달 띄우기
     document.getElementById('modal-data').className = "modal-grid";
     document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+    // ==========================================
+// [추가 기능] 역대 구단 통산 마일스톤(100호골 단위) 계산기
+// ==========================================
+function calculateMilestoneGoals() {
+    let currentGoalCount = 0;
+    // 가장 과거 경기부터 시간순으로 정렬한 복사본 생성
+    const chronoData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    chronoData.forEach(m => {
+        const scorersStr = m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
+        if (scorersStr.trim() !== "") {
+            const list = scorersStr.split(',').map(s => s.trim());
+            let markedScorers = [];
+            
+            list.forEach(s => {
+                currentGoalCount++; // 골 추가
+                
+                // 100 단위로 나누어 떨어질 때 (100, 200, 300 ...)
+                if (currentGoalCount % 100 === 0) {
+                    markedScorers.push(`${s}@@${currentGoalCount}@@`); // 비밀 마커 부착
+                } else {
+                    markedScorers.push(s);
+                }
+            });
+            
+            // 원본 데이터 객체에 마일스톤이 적용된 새로운 문자열 저장
+            m.milestone_scorers = markedScorers.join(',');
+        }
+    });
 }
 </script>
 </body>
