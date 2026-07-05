@@ -806,8 +806,8 @@ function sortHistoricalPoint(col) {
 }
     function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap += parseInt(d.ap)||0; t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => (b[sortState.column] || 0) - (a[sortState.column] || 0)); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
     function toggleSortTotal(col) { sortState.column = col; renderAllRankingsTable(); }
-    // ==========================================
-// [교체] 선수 상세 모달 (상대 팀별 득점 & 득점 일지 추가)
+// ==========================================
+// [교체] 선수 상세 모달 (상대 팀별 득점 & 득점 일지 - 2013년 이후만 적용)
 // ==========================================
 function showPlayerTotal(name) { 
     // 1. 기존: 선수 통산 기록 요약 (playerSeasonData 활용)
@@ -824,6 +824,11 @@ function showPlayerTotal(name) {
     let goalLog = [];
 
     rawData.forEach(m => {
+        // [핵심 추가] 경기 날짜에서 연도를 추출하여 2013년 미만(프로 이전) 경기는 건너뜀
+        if (!m.date) return;
+        const matchYear = parseInt(m.date.substring(0, 4));
+        if (matchYear < 2013) return;
+
         // milestone_scorers(황금배지 마커)가 우선, 없으면 일반 bfc_scorers
         const scorersStr = m.milestone_scorers || m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
         if (!scorersStr) return;
