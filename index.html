@@ -868,10 +868,12 @@ function sortHistoricalPoint(col) {
     window.onload = loadData;
 
     // ==========================================
+// ==========================================
 // [추가 기능] 주심별 전적 통계 및 연동 시스템
 // ==========================================
 let refereeStatsData = [];
-let refereeSortState = { col: 'winRate', desc: true };
+// [수정] 초기 정렬 기준을 'match'(관장경기수)로 변경
+let refereeSortState = { col: 'match', desc: true };
 
 // 1. 주심별 전적 뷰어 실행 함수
 function showRefereeStats() {
@@ -887,8 +889,10 @@ function showRefereeStats() {
     document.getElementById('dynamic-title').innerText = `⚖️ 부천FC1995 역대 주심별 배정 경기 전적 및 승률`;
     
     const summary = document.getElementById('dynamic-summary');
-    summary.innerHTML = `역대 부천FC1995 경기를 관장한 주심들의 전적을 승률순으로 표출합니다.<br>
-                         <span style="font-size:0.85rem; color:#666;">* 표에서 <b style="color:var(--bfc-red);">주심 이름</b>을 클릭하면 해당 주심이 배정된 모든 경기 결과를 상세 조회합니다.</span>`;
+    // [수정] 안내 텍스트 변경 (승률순 -> 관장경기수 순)
+    summary.innerHTML = `•역대 부천FC1995 경기를 관장한 주심들의 전적을 관장경기수 순으로 표출합니다.<br>
+                         <span style="font-size:0.85rem; color:#666;">•표에서 <b>주심 이름</b>을 클릭하면 해당 주심이 배정된 모든 경기 결과를 상세 조회합니다.
+                         <br>•주심 기록은 2008년 경기 일부, 2012년 챌린저스컵, 2013년부터의 모든 경기를 포함하고 있습니다. (2012년 이전 대한축구협회 기록 미제공) </span>`;
     summary.style.display = 'block';
 
     // 데이터 집계
@@ -922,13 +926,13 @@ function showRefereeStats() {
         return r;
     });
 
-    // 초기 정렬 (승률 높은 순 -> 승률 같으면 관장 경기 수 많은 순)
+    // [수정] 초기 정렬 (관장 경기 수 많은 순 -> 경기수가 같으면 승률 높은 순)
     refereeStatsData.sort((a, b) => {
-        if (b.winRate === a.winRate) return b.match - a.match;
-        return b.winRate - a.winRate;
+        if (b.match === a.match) return b.winRate - a.winRate;
+        return b.match - a.match;
     });
     
-    refereeSortState = { col: 'winRate', desc: true };
+    refereeSortState = { col: 'match', desc: true };
     renderRefereeStatsTable(refereeStatsData);
 }
 
@@ -953,9 +957,10 @@ function renderRefereeStatsTable(data) {
     }
 
     document.getElementById('table-body').innerHTML = data.map((r, i) => {
+        // [수정] 주심 이름 색상을 빨간색에서 검정색(var(--bfc-black))으로 변경
         return `<tr>
             <td>${i + 1}</td>
-            <td><b class="clickable" onclick="filterByReferee('${r.name}')" style="color:var(--bfc-red); font-size:1rem;">${r.name}</b></td>
+            <td><b class="clickable" onclick="filterByReferee('${r.name}')" style="color:var(--bfc-black); font-size:1rem;">${r.name}</b></td>
             <td>${r.match}</td>
             <td>${r.w}</td>
             <td>${r.d}</td>
@@ -975,16 +980,17 @@ function sortRefereeStats(col) {
     refereeStatsData.sort((a, b) => {
         let v1 = a[col], v2 = b[col];
         if (v1 === v2) {
-            // 주 정렬 값이 같을 경우 보조 정렬 (경기수 등)
+            // [수정] 주 정렬 값이 같을 경우 보조 정렬 로직 보완
+            if (col === 'match') return refereeSortState.desc ? (b.winRate - a.winRate) : (a.winRate - b.winRate);
             if (col === 'winRate') return refereeSortState.desc ? (b.match - a.match) : (a.match - b.match);
-            return refereeSortState.desc ? (b.winRate - a.winRate) : (a.winRate - b.winRate);
+            return refereeSortState.desc ? (b.match - a.match) : (a.match - b.match);
         }
         return refereeSortState.desc ? v2 - v1 : v1 - v2;
     });
     renderRefereeStatsTable(refereeStatsData);
 }
 
-// 4. [핵심] 주심 이름 클릭 시 해당 주심의 모든 경기결과 조회로 점프하는 함수
+// 4. 주심 이름 클릭 시 해당 주심의 모든 경기결과 조회로 점프하는 함수
 function filterByReferee(name) {
     resetToAll(); // 화면 및 필터를 기본 '팀 기록' 모드로 초기화
     
