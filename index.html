@@ -348,7 +348,7 @@ function calculateStreaks() {
     }
     if (undefCard) {
         let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${top3Counts[0]}경기</b>)</span>`;
-        if (activeUndef >= 7) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
+        if (activeUndef >= 3) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
         undefCard.innerHTML = html;
     }
 }
