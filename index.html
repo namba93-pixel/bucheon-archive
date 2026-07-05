@@ -806,7 +806,129 @@ function sortHistoricalPoint(col) {
 }
     function renderAllRankingsTable() { document.getElementById('table-head').innerHTML = `<tr><th>순위</th><th>이름</th><th onclick="toggleSortTotal('match')">통산출전 ↕</th><th onclick="toggleSortTotal('goal')">통산득점 ↕</th><th onclick="toggleSortTotal('assist')">도움 ↕</th><th onclick="toggleSortTotal('ap')">포인트 ↕</th><th onclick="toggleSortTotal('cs')">클린시트 ↕</th><th>소속시즌</th></tr>`; const t = {}; playerSeasonData.forEach(d => { if(!t[d.name]) t[d.name] = { name:d.name, match:0, goal:0, assist:0, ap:0, cs:0, seasons:[] }; t[d.name].match += parseInt(d.match)||0; t[d.name].goal += parseInt(d.goal)||0; t[d.name].assist += parseInt(d.assist)||0; t[d.name].ap += parseInt(d.ap)||0; t[d.name].cs += parseInt(d.cleansheet)||0; if(!t[d.name].seasons.includes(d.season)) t[d.name].seasons.push(d.season); }); let sorted = Object.values(t).sort((a,b) => (b[sortState.column] || 0) - (a[sortState.column] || 0)); document.getElementById('table-body').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><b class="clickable" onclick="showPlayerTotal('${p.name}')">${p.name}</b></td><td class="${sortState.column==='match'?'highlight-red':''}">${p.match}</td><td class="${sortState.column==='goal'?'highlight-red':''}">${p.goal}</td><td class="${sortState.column==='assist'?'highlight-red':''}">${p.assist}</td><td class="${sortState.column==='ap'?'highlight-red':''}">${p.ap}</td><td class="${sortState.column==='cs'?'highlight-red':''}">${p.cs}</td><td style="font-size:0.75rem">${formatSeasons(p.seasons)}</td></tr>`).join(''); }
     function toggleSortTotal(col) { sortState.column = col; renderAllRankingsTable(); }
-    function showPlayerTotal(name) { const pData = playerSeasonData.filter(p => p.name === name); const tot = { m:0, g:0, a:0, ap:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; pData.forEach(d => { tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.ap += parseInt(d.ap)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); }); const apSum = tot.ap, sT = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0, cR = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00"; document.getElementById('modal-data').innerHTML = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div><div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${sT}</div></div><div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div><div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div><div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div><div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div><div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div><div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>` + (isGK ? `<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div><div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${cR})</div></div>` : ""); document.getElementById('modal-data').className = "modal-grid"; document.getElementById('modal-overlay').style.display = 'flex'; }
+    // ==========================================
+// [교체] 선수 상세 모달 (상대 팀별 득점 & 득점 일지 추가)
+// ==========================================
+function showPlayerTotal(name) { 
+    // 1. 기존: 선수 통산 기록 요약 (playerSeasonData 활용)
+    const pData = playerSeasonData.filter(p => p.name === name); 
+    const tot = { m:0, g:0, a:0, ap:0, pk:0, cs:0, con:0, yc:0, rc:0, seasons:[] }; 
+    pData.forEach(d => { 
+        tot.m += parseInt(d.match)||0; tot.g += parseInt(d.goal)||0; tot.a += parseInt(d.assist)||0; tot.ap += parseInt(d.ap)||0; tot.pk += parseInt(d.pk)||0; tot.cs += parseInt(d.cleansheet)||0; tot.con += parseInt(d.conceded)||0; tot.yc += parseInt(d.yc)||0; tot.rc += parseInt(d.rc)||0; 
+        if(!tot.seasons.includes(d.season)) tot.seasons.push(d.season); 
+    }); 
+    const apSum = tot.ap, sT = formatSeasons(tot.seasons), isGK = tot.con > 0 || tot.cs > 0, cR = tot.m > 0 ? (tot.con / tot.m).toFixed(2) : "0.00"; 
+
+    // 2. 신규: 득점 상세 분석 (rawData의 bfc_scorers 분석)
+    let goalsByOpponent = {};
+    let goalLog = [];
+
+    rawData.forEach(m => {
+        // milestone_scorers(황금배지 마커)가 우선, 없으면 일반 bfc_scorers
+        const scorersStr = m.milestone_scorers || m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
+        if (!scorersStr) return;
+
+        const list = scorersStr.split(',').map(s => s.trim());
+        let matchGoalCount = 0;
+        let matchGoalTimes = [];
+
+        list.forEach(s => {
+            // "안재준(45)@@100@@" 같은 텍스트에서 마커 삭제 후 순수 텍스트 추출
+            let cleanStr = s.replace(/@@\d+@@/g, '').trim(); 
+            // 이름 부분만 분리 (괄호 앞부분)
+            let scorerName = cleanStr.split('(')[0].trim();
+            
+            // 이름이 완벽히 일치할 때만 골 카운트
+            if (scorerName === name) {
+                matchGoalCount++;
+                // 괄호 안의 시간 추출
+                let timeMatch = cleanStr.match(/\((.*?)\)/);
+                if (timeMatch) matchGoalTimes.push(timeMatch[1]);
+                else matchGoalTimes.push("시간미상");
+            }
+        });
+
+        // 해당 경기에서 이 선수가 골을 넣었다면
+        if (matchGoalCount > 0) {
+            const isH = (m.hometeam || "").includes("부천");
+            const oppRaw = isH ? m.awayteam : m.hometeam;
+            const opp = getUnifiedTeamName(oppRaw); // 팀명 통일 (예: 안산 무궁화 -> 경찰청)
+
+            if (!goalsByOpponent[opp]) goalsByOpponent[opp] = 0;
+            goalsByOpponent[opp] += matchGoalCount;
+
+            goalLog.push({
+                date: m.date,
+                opp: oppRaw,
+                isHome: isH,
+                count: matchGoalCount,
+                times: matchGoalTimes.join(', ') // "15, 45+2" 형태
+            });
+        }
+    });
+
+    // 상대 팀별 득점 내림차순 정렬
+    const sortedOpponents = Object.entries(goalsByOpponent).sort((a, b) => b[1] - a[1]);
+    let oppHtml = "";
+    if (sortedOpponents.length > 0) {
+        oppHtml = `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">`;
+        sortedOpponents.forEach(([oppName, count], idx) => {
+            // 가장 많이 골을 넣은 1순위 팀은 빨간색으로 강조
+            const isTop = idx === 0 ? "background:var(--bfc-red); color:white; border-color:var(--bfc-red);" : "background:#fff; color:#333;";
+            oppHtml += `<span style="padding:4px 10px; border:1px solid #ccc; border-radius:15px; font-size:0.8rem; font-weight:bold; ${isTop}">${oppName} ${count}골</span>`;
+        });
+        oppHtml += `</div>`;
+    }
+
+    // 득점 일지 역순(최신순) 정렬
+    goalLog.sort((a,b) => new Date(b.date) - new Date(a.date));
+    let logHtml = "";
+    if (goalLog.length > 0) {
+        // 기록이 길어질 수 있으므로 스크롤(overflow-y) 처리
+        logHtml = `<ul style="list-style:none; padding:0; margin:0; max-height:180px; overflow-y:auto; border-top:1px dashed #ddd; padding-top:10px; font-size:0.85rem;">`;
+        goalLog.forEach(log => {
+            const locTag = log.isHome ? `<span style="color:var(--bfc-red); font-weight:bold;">[홈]</span>` : `<span style="color:#555; font-weight:bold;">[원정]</span>`;
+            logHtml += `<li style="padding:8px 0; border-bottom:1px solid #f4f4f4;">
+                            ${locTag} <span style="color:#666;">${log.date}</span> vs <b>${log.opp}</b> 
+                            <span style="color:var(--bfc-red); font-weight:bold; margin-left:5px;">${log.count > 1 ? log.count + '골 ⚽⚽' : '1골 ⚽'}</span> 
+                            <span style="color:#888; font-size:0.75rem;">(${log.times}분)</span>
+                        </li>`;
+        });
+        logHtml += `</ul>`;
+    }
+
+    // 최종 모달 HTML 렌더링
+    let html = `<div class="modal-header" style="grid-column: span 2;"><h2>${name} 선수 통산 기록</h2></div>
+                <div class="stat-card modal-item-full"><div class="stat-label">소속 시즌</div><div class="stat-value">${sT}</div></div>
+                <div class="stat-card"><div class="stat-label">통산 출전</div><div class="stat-value">${tot.m}경기</div></div>
+                <div class="stat-card"><div class="stat-label">통산 득점</div><div class="stat-value">${tot.g}골</div></div>
+                <div class="stat-card"><div class="stat-label">통산 도움</div><div class="stat-value">${tot.a}도움</div></div>
+                <div class="stat-card"><div class="stat-label">공격포인트</div><div class="stat-value">${apSum}pt</div></div>
+                <div class="stat-card"><div class="stat-label">PK 성공</div><div class="stat-value">${tot.pk}</div></div>
+                <div class="stat-card"><div class="stat-label">경고/퇴장</div><div class="stat-value">${tot.yc}/${tot.rc}</div></div>`;
+    
+    if (isGK) {
+        html += `<div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">클린시트</div><div class="stat-value">${tot.cs}회</div></div>
+                 <div class="stat-card" style="margin-top:10px; border-top: 2px dashed #eee; padding-top:20px;"><div class="stat-label">통산 실점</div><div class="stat-value">${tot.con}실점</div><div class="rate-small">(경기당 ${cR})</div></div>`;
+    }
+
+    // ★ 득점 기록이 있는 선수에게만 분석 섹션 노출
+    if (sortedOpponents.length > 0) {
+        html += `
+            <div class="modal-item-full" style="margin-top:15px; background:#f8f9fa; border-radius:15px; padding:20px; border:1px solid #eee;">
+                <h3 style="margin:0 0 5px 0; font-size:0.95rem; color:var(--bfc-black);">🎯 상대 팀별 득점 <span style="font-size:0.75rem; color:#888; font-weight:normal;">(가장 많이 득점한 팀)</span></h3>
+                ${oppHtml}
+                
+                <h3 style="margin:20px 0 5px 0; font-size:0.95rem; color:var(--bfc-black);">📅 득점 일지 <span style="font-size:0.75rem; color:#888; font-weight:normal;">(최근 순)</span></h3>
+                ${logHtml}
+            </div>
+        `;
+    }
+
+    document.getElementById('modal-data').innerHTML = html; 
+    document.getElementById('modal-data').className = "modal-grid"; 
+    document.getElementById('modal-overlay').style.display = 'flex'; 
+}
 
     function initFilters() {
         const tY = [...new Set(rawData.map(m => (m.date || "").substring(0,4)))].sort(); const yS = document.getElementById('select-year'); if(yS) { yS.innerHTML = '<option value="">전체 시즌</option>'; tY.forEach(y => yS.add(new Option(y + " 시즌", y))); }
