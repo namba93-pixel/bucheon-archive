@@ -716,7 +716,25 @@ function sortHistoricalPoint(col) {
             const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); 
             const displayOpponent = isH ? m.awayteam : m.hometeam;
             const val = isAwayMode ? (parseInt(m.awayfan)||0) : (parseInt(String(m.attendance).replace(/,/g,''))||0);
-            return `<tr><td>${m.date}</td><td>${m.league}</td><td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td><td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td class="${isAwayMode?'highlight-red':''}">${val > 0 ? val.toLocaleString() : "-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`; 
+            
+            // [추가] 모달에 넘겨줄 경기 제목과 득점자 데이터 안전하게 추출 (시트의 bfc_scorers 열 인식)
+            const matchTitle = isH ? `부천FC1995 vs ${displayOpponent}` : `${displayOpponent} vs 부천FC1995`;
+            const bfcScorers = m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
+
+            return `<tr>
+                <td>${m.date}</td>
+                <td>${m.league}</td>
+                <td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td>
+                <td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td>
+                
+                <td onclick="showMatchDetails('${m.date}', '${matchTitle}', '${hS}:${aS}', '${bfcScorers}')" style="cursor:pointer; background-color:#fff5f5; border-radius:8px;">
+                    <span class="clickable" style="font-weight:900; color:var(--bfc-red); font-size:1.1rem;">${hS}:${aS}</span>
+                </td>
+                
+                <td class="${res==='승'?'win':''}">${res}</td>
+                <td class="${isAwayMode?'highlight-red':''}">${val > 0 ? val.toLocaleString() : "-"}</td>
+                <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
+            </tr>`; 
         }).join('');
     }
 
@@ -1147,6 +1165,47 @@ window.addEventListener('DOMContentLoaded', () => {
         observer.observe(tb, { childList: true, subtree: true });
     }
 });
+
+    // ==========================================
+// [추가 기능] 경기 스코어 클릭 시 득점자 상세 정보 팝업
+// ==========================================
+function showMatchDetails(date, title, score, scorers) {
+    let scorerHtml = '<div style="padding: 15px; color: #999; text-align: center;">득점 정보가 없습니다. (또는 무득점 경기)</div>';
+
+    // 득점자 데이터가 존재할 경우 쉼표로 쪼개서 리스트 생성
+    if (scorers && scorers.trim() !== "") {
+        const list = scorers.split(',').map(s => s.trim());
+        scorerHtml = '<ul style="list-style:none; padding:0; margin:0; text-align:left;">';
+        list.forEach(s => {
+            // 자책골은 색상을 다르게 표현
+            const isOG = s.includes('자책골') ? 'style="color:#666;"' : 'style="color:var(--bfc-black); font-weight:bold;"';
+            scorerHtml += `<li style="padding: 10px 15px; border-bottom: 1px solid #eee; display:flex; align-items:center; gap:10px;">
+                                <span>⚽</span> <span ${isOG}>${s}</span>
+                           </li>`;
+        });
+        scorerHtml += '</ul>';
+    }
+
+    // 모달창 내부에 HTML 주입 (기존 선수 모달창 UI 완벽 재활용)
+    document.getElementById('modal-data').innerHTML = `
+        <div class="modal-header" style="grid-column: span 2; margin-bottom: 10px; padding-bottom:15px;">
+            <h2 style="font-size: 1.4rem; color:var(--bfc-red);">${title}</h2>
+            <p style="color: #666; margin-top: 5px; font-size:0.9rem;">${date}</p>
+        </div>
+        <div class="stat-card modal-item-full" style="padding: 0; overflow:hidden; background:white; border: 2px solid var(--bfc-black);">
+            <div style="background: var(--bfc-black); color: white; padding: 15px; font-size: 2rem; font-weight: 900;">
+                ${score}
+            </div>
+            <div style="background: #f8f9fa;">
+                ${scorerHtml}
+            </div>
+        </div>
+    `;
+    
+    // 모달 띄우기
+    document.getElementById('modal-data').className = "modal-grid";
+    document.getElementById('modal-overlay').style.display = 'flex';
+}
 </script>
 </body>
 </html>
