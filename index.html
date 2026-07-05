@@ -261,7 +261,7 @@
     <div id="dynamic-header" class="view-header">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div id="dynamic-title" style="font-weight:bold; font-size:1.1rem; word-break:keep-all;"></div>
-            <button id="btn-back" class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem; flex:none;" onclick="resetToAll()">이전 결과로 돌아가기</button>
+            <button id="btn-back" class="mode-btn" style="padding: 5px 15px; font-size: 0.8rem; flex:none;" onclick="goBackToPrevious()">이전 결과로 돌아가기</button>
         </div>
         <div id="dynamic-summary" class="view-summary"></div>
     </div>
@@ -997,6 +997,150 @@ function filterByReferee(name) {
     // 기존의 막강한 조회 로직(updateView) 재활용 (동적 타이틀까지 알아서 변경됨)
     updateView();
 }
+
+    // ==========================================
+// [추가 기능] 스마트 뒤로가기 (히스토리 스택 엔진)
+// ==========================================
+let historyStack = [];
+let isNavigatingBack = false;
+
+function pushStateToHistory() {
+    // 뒤로가기 복원 중이거나, 테이블에 내용이 아예 없을 때는 백업하지 않음
+    if (isNavigatingBack) return;
+    if (!document.getElementById('table-body') || document.getElementById('table-body').innerHTML.trim() === "") return;
+    
+    // 현재 화면의 모든 조건과 디자인(HTML) 상태를 스냅샷 객체로 저장
+    const state = {
+        mode: currentMode,
+        filter: { ...currentFilter },
+        sort: { ...sortState },
+        isTotalRank: isTotalRankMode,
+        dom: {
+            tYear: document.getElementById('select-year')?.value || "",
+            tLoc: document.getElementById('select-location')?.value || "",
+            tMgr: document.getElementById('select-manager')?.value || "",
+            tLg: document.getElementById('select-league')?.value || "",
+            tOpp: document.getElementById('search-opponent')?.value || "",
+            tOppMgr: document.getElementById('search-opp-manager')?.value || "",
+            tRef: document.getElementById('search-referee')?.value || "",
+            pYear: document.getElementById('p-select-year')?.value || "",
+            pName: document.getElementById('p-search-name')?.value || ""
+        },
+        headerTitle: document.getElementById('dynamic-title')?.innerText || "",
+        headerSummary: document.getElementById('dynamic-summary')?.innerHTML || "",
+        ui: {
+            teamFilter1: document.getElementById('team-filter-1')?.style.display || "",
+            teamFilter2: document.getElementById('team-filter-2')?.style.display || "",
+            teamNotice: document.getElementById('team-notice')?.style.display || "",
+            playerFilter: document.querySelector('#player-section .filter-container')?.style.display || "",
+            playerNotice: document.querySelector('#player-section .data-notice')?.style.display || "",
+            playerPanel: document.getElementById('player-ranking-panel')?.style.display || "",
+            headerDisplay: document.getElementById('dynamic-header')?.style.display || ""
+        },
+        // [핵심] 테이블 형태를 문자열 통째로 백업
+        tableHead: document.getElementById('table-head')?.innerHTML || "",
+        tableBody: document.getElementById('table-body')?.innerHTML || ""
+    };
+
+    // 직전 상태와 완벽히 동일한 내용이면 중복 저장하지 않음
+    if (historyStack.length > 0) {
+        const last = historyStack[historyStack.length - 1];
+        if (last.tableBody === state.tableBody && last.headerTitle === state.headerTitle) return;
+    }
+
+    // 스택에 저장 (메모리 보호를 위해 최대 30단계까지만 저장)
+    historyStack.push(state);
+    if (historyStack.length > 30) historyStack.shift(); 
+}
+
+// [뒤로가기 버튼 실행 함수]
+function goBackToPrevious() {
+    if (historyStack.length <= 1) {
+        // 기록이 1개(최초화면) 이거나 없으면 메인 홈으로 완전 초기화
+        historyStack = [];
+        resetToAll();
+        return;
+    }
+
+    historyStack.pop(); // 방금까지 보던 현재 화면 기록은 버림
+    const prevState = historyStack[historyStack.length - 1]; // 직전 화면 데이터 불러오기
+    
+    isNavigatingBack = true; // 복원 중에는 화면 감지기(Observer) 작동 일시정지
+
+    // 1. 코어 변수 복구
+    currentMode = prevState.mode;
+    currentFilter = { ...prevState.filter };
+    sortState = { ...prevState.sort };
+    isTotalRankMode = prevState.isTotalRank;
+
+    // 2. 검색창 및 셀렉트 박스 입력값 복구
+    if(document.getElementById('select-year')) document.getElementById('select-year').value = prevState.dom.tYear;
+    if(document.getElementById('select-location')) document.getElementById('select-location').value = prevState.dom.tLoc;
+    if(document.getElementById('select-manager')) document.getElementById('select-manager').value = prevState.dom.tMgr;
+    if(document.getElementById('select-league')) document.getElementById('select-league').value = prevState.dom.tLg;
+    if(document.getElementById('search-opponent')) document.getElementById('search-opponent').value = prevState.dom.tOpp;
+    if(document.getElementById('search-opp-manager')) document.getElementById('search-opp-manager').value = prevState.dom.tOppMgr;
+    if(document.getElementById('search-referee')) document.getElementById('search-referee').value = prevState.dom.tRef;
+    if(document.getElementById('p-select-year')) document.getElementById('p-select-year').value = prevState.dom.pYear;
+    if(document.getElementById('p-search-name')) document.getElementById('p-search-name').value = prevState.dom.pName;
+
+    // 3. UI 탭 및 필터 박스 노출 상태 복구
+    if(document.getElementById('team-section')) document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
+    if(document.getElementById('player-section')) document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
+    if(document.getElementById('mode-t')) document.getElementById('mode-t').className = currentMode === 'team' ? 'mode-btn active' : 'mode-btn';
+    if(document.getElementById('mode-p')) document.getElementById('mode-p').className = currentMode === 'player' ? 'mode-btn active' : 'mode-btn';
+
+    if(document.getElementById('team-filter-1')) document.getElementById('team-filter-1').style.display = prevState.ui.teamFilter1;
+    if(document.getElementById('team-filter-2')) document.getElementById('team-filter-2').style.display = prevState.ui.teamFilter2;
+    if(document.getElementById('team-notice')) document.getElementById('team-notice').style.display = prevState.ui.teamNotice;
+    
+    const pFilter = document.querySelector('#player-section .filter-container');
+    if(pFilter) pFilter.style.display = prevState.ui.playerFilter;
+    
+    const pNotice = document.querySelector('#player-section .data-notice');
+    if(pNotice) pNotice.style.display = prevState.ui.playerNotice;
+    
+    if(document.getElementById('player-ranking-panel')) document.getElementById('player-ranking-panel').style.display = prevState.ui.playerPanel;
+    if(document.getElementById('dynamic-header')) document.getElementById('dynamic-header').style.display = prevState.ui.headerDisplay;
+
+    // 4. 헤더 텍스트 복구
+    if(document.getElementById('dynamic-title')) document.getElementById('dynamic-title').innerText = prevState.headerTitle;
+    if(document.getElementById('dynamic-summary')) document.getElementById('dynamic-summary').innerHTML = prevState.headerSummary;
+
+    // 5. 렌더링된 테이블 화면(HTML) 그대로 덮어씌우기
+    if(document.getElementById('table-head')) document.getElementById('table-head').innerHTML = prevState.tableHead;
+    if(document.getElementById('table-body')) document.getElementById('table-body').innerHTML = prevState.tableBody;
+
+    // 보조 UI 보정 (원정팬 버튼 활성화 여부)
+    const btnAway = document.getElementById('btn-away-fan');
+    if(btnAway) btnAway.className = currentFilter.type === 'away_fan' ? 'away-btn active' : 'away-btn';
+
+    // UI 복구가 완전히 끝난 후 감지기 재가동
+    setTimeout(() => { isNavigatingBack = false; }, 100);
+}
+
+// 상단 타이틀 로고 클릭(메인 홈으로 가기) 시 히스토리 스택도 같이 비워지도록 이벤트 리스너 추가
+window.addEventListener('DOMContentLoaded', () => {
+    const homeLink = document.querySelector('.home-link');
+    if (homeLink) {
+        homeLink.addEventListener('click', () => {
+            historyStack = [];
+        });
+    }
+
+    // MutationObserver 설정: 테이블(표)이 새롭게 그려질 때마다 '찰칵' 스냅샷 저장
+    const tb = document.getElementById('table-body');
+    if (tb) {
+        let historyDebounce;
+        const observer = new MutationObserver(() => {
+            if (isNavigatingBack) return;
+            clearTimeout(historyDebounce);
+            // 0.1초 딜레이를 주어 화면 업데이트가 완벽히 끝난 최종 상태만 캡처
+            historyDebounce = setTimeout(pushStateToHistory, 100);
+        });
+        observer.observe(tb, { childList: true, subtree: true });
+    }
+});
 </script>
 </body>
 </html>
