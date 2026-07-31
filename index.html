@@ -1410,6 +1410,9 @@ function calculateMilestoneGoals() {
     // ==========================================
 // [신규] 마일스톤(호골) 기록 페이지 렌더링 함수
 // ==========================================
+// ==========================================
+// [교체] 마일스톤(호골) 기록 페이지 렌더링 함수 (대회명 표출 추가)
+// ==========================================
 function showMilestoneGoals() {
     resetToAll();
     currentFilter.type = 'milestone_view';
@@ -1429,7 +1432,7 @@ function showMilestoneGoals() {
     header.style.display = "flex";
     document.getElementById('dynamic-title').innerText = `🏆 부천FC1995 역대 마일스톤(호골) 기록`;
     
-    // [핵심] 다음 목표 계산 (예: 현재 835골이면 -> 900)
+    // 다음 목표 계산
     const nextTarget = Math.ceil((totalClubGoals + 1) / 100) * 100;
     const goalsLeft = nextTarget - totalClubGoals;
 
@@ -1442,33 +1445,34 @@ function showMilestoneGoals() {
     // 역대 마일스톤 리스트 (가장 최근 기록이 위로 오도록 역순 정렬)
     const sortedMilestones = [...milestoneList].sort((a, b) => b.milestone - a.milestone);
 
+    // [수정] 테이블 헤더에 '대회' 추가
     document.getElementById('table-head').innerHTML = `
         <tr>
             <th>달성 기록</th>
             <th>날짜</th>
+            <th>대회</th>
             <th>주인공 (시간)</th>
             <th>상대팀</th>
             <th>장소</th>
             <th>스코어</th>
         </tr>`;
     
+    // [수정] 테이블 본문에 m.rawMatch.league 추가
     document.getElementById('table-body').innerHTML = sortedMilestones.map((m, i) => {
-        // 1호골은 까만색 배경, 100호골 단위는 황금색 배경으로 구분
         const badgeColor = m.milestone === 1 ? 'background:#333; color:#fff;' : 'background:linear-gradient(135deg, #ffd700, #ffb300); color:#000; border:1px solid #da9600;';
         const badge = `<span style="${badgeColor} padding:5px 12px; border-radius:20px; font-weight:900; box-shadow:0 2px 5px rgba(0,0,0,0.1);">🏆 ${m.milestone}호 골</span>`;
         
-        // 모달창 연동용 데이터 추출
         const isH = (m.rawMatch.hometeam || "").includes("부천");
         const oppName = isH ? m.rawMatch.awayteam : m.rawMatch.hometeam;
         const matchTitle = isH ? `부천FC1995 vs ${oppName}` : `${oppName} vs 부천FC1995`;
         const bfcScorers = m.rawMatch.milestone_scorers || "";
 
-        // 가장 최근에 달성된 맨 윗줄 기록은 살짝 노란 배경으로 강조
         const rowBg = i === 0 ? '#fffde7' : '#fff';
 
         return `<tr style="background:${rowBg};">
             <td style="padding:15px;">${badge}</td>
             <td>${m.date}</td>
+            <td>${m.rawMatch.league}</td>
             <td style="font-size:1.1rem;"><b style="color:var(--bfc-red);">${m.scorer}</b> <span style="font-size:0.8rem; color:#888;">(${m.time}분)</span></td>
             <td><b>${m.opp}</b></td>
             <td>${m.stadium||"-"}</td>
