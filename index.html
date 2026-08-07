@@ -222,8 +222,7 @@
                     <select id="e-day" onchange="updateView()" style="width:70px; padding:8px; border-radius:6px;"><option value="">일</option></select>
                 </div>
             </div>
-        </div>
-        <div id="team-filter-2" class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
+            <div id="team-filter-2" class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
             <div class="filter-item"><label>상대팀 검색</label><input type="text" id="search-opponent" placeholder="팀명 입력" onkeyup="showSuggestions(this, 'opponentName')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item"><label>상대감독 검색</label><input type="text" id="search-opp-manager" placeholder="감독명 입력" onkeyup="showSuggestions(this, 'opp_manager')" autocomplete="off"><ul class="search-results"></ul></div>
             <div class="filter-item">
@@ -1322,8 +1321,6 @@ function goBackToPrevious() {
     const btnAway = document.getElementById('btn-away-fan');
     if(btnAway) btnAway.className = currentFilter.type === 'away_fan' ? 'away-btn active' : 'away-btn';
 
-    setTimeout(() => { isNavigatingBack = false; }, 100);
-}
     setTimeout(() => { isNavigatingBack = false; }, 100);
 }
 // 상단 타이틀 로고 클릭(메인 홈으로 가기) 시 히스토리 스택도 같이 비워지도록 이벤트 리스너 추가
