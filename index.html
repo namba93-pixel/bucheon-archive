@@ -191,8 +191,20 @@
 
 <div class="container">
     <div id="team-section">
+        <!-- [교체됨] 팀 필터 1 (기간 지정 기능 추가) -->
         <div id="team-filter-1" class="filter-container">
             <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
+            
+            <!-- [신규] 기간 상세 조회 (달력) -->
+            <div class="filter-item" style="grid-column: span 1;">
+                <label>기간 상세 조회</label>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <input type="date" id="start-date" onchange="updateView()" style="padding: 10px; font-size: 0.8rem;">
+                    <span style="font-weight: bold; color: #999;">~</span>
+                    <input type="date" id="end-date" onchange="updateView()" style="padding: 10px; font-size: 0.8rem;">
+                </div>
+            </div>
+
             <div class="filter-item"><label>홈/원정경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
             <div class="filter-item">
@@ -588,25 +600,33 @@ function sortHistoricalPoint(col) {
     function updateView() { if (currentMode === 'team' || currentFilter.type) renderTeamTable(); else { if (isTotalRankMode) renderAllRankingsTable(); else renderPlayerTable(); } }
 
     function renderTeamTable() {
-        const year = document.getElementById('select-year').value, loc = document.getElementById('select-location').value, mgr = document.getElementById('select-manager').value, selLg = document.getElementById('select-league').value;
-        const sOpp = (document.getElementById('search-opponent')?.value || "").trim(), sOppMgr = (document.getElementById('search-opp-manager')?.value || "").trim(), sRef = (document.getElementById('search-referee')?.value || "").trim();
-        const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary');
+        const year = document.getElementById('select-year')?.value, 
+              loc = document.getElementById('select-location')?.value, 
+              mgr = document.getElementById('select-manager')?.value, 
+              selLg = document.getElementById('select-league')?.value,
+              startDate = document.getElementById('start-date')?.value || "", // [추가] 시작일
+              endDate = document.getElementById('end-date')?.value || "";     // [추가] 종료일
+
+        const sOpp = (document.getElementById('search-opponent')?.value || "").trim(), 
+              sOppMgr = (document.getElementById('search-opp-manager')?.value || "").trim(), 
+              sRef = (document.getElementById('search-referee')?.value || "").trim();
+
+        const header = document.getElementById('dynamic-header'), 
+              titleEl = document.getElementById('dynamic-title'), 
+              summary = document.getElementById('dynamic-summary');
         
         let filtered = [];
 
-        // [수정] 투데이 히스토리(개막전) 진입 시 필터 영역 숨기기
         if (currentFilter.type === 'opening_match') {
-        header.style.display = "flex"; 
-        titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
-        
-        // 검색창 및 필터 박스 숨기기
-        const teamFilter1 = document.getElementById('team-filter-1');
-        const teamFilter2 = document.getElementById('team-filter-2');
-        const teamNotice = document.getElementById('team-notice');
-        
-        if (teamFilter1) teamFilter1.style.display = 'none';
-        if (teamFilter2) teamFilter2.style.display = 'none';
-        if (teamNotice) teamNotice.style.display = 'none';
+            header.style.display = "flex"; 
+            titleEl.innerText = `🔍 부천FC1995 역대 리그 개막전 경기결과`;
+            const teamFilter1 = document.getElementById('team-filter-1');
+            const teamFilter2 = document.getElementById('team-filter-2');
+            const teamNotice = document.getElementById('team-notice');
+            if (teamFilter1) teamFilter1.style.display = 'none';
+            if (teamFilter2) teamFilter2.style.display = 'none';
+            if (teamNotice) teamNotice.style.display = 'none';
+            
             const yearGroups = {};
             rawData.forEach(m => { if (m.league.includes("리그")) { const y = m.date.substring(0, 4); if (!yearGroups[y] || new Date(m.date) < new Date(yearGroups[y].date)) { yearGroups[y] = m; } } });
             filtered = Object.values(yearGroups).filter(m => (!loc || (loc === 'home' ? (m.hometeam||"").includes("부천") : !(m.hometeam||"").includes("부천"))) && (!mgr || (m.bfcmanager || m.bfc_manager) === mgr) && (!year || m.date.startsWith(year)) && (!selLg || getUnifiedLeagueName(m.league) === selLg));
@@ -616,15 +636,22 @@ function sortHistoricalPoint(col) {
             filtered = rawData.filter(m => !(m.hometeam || "").includes("부천") && parseInt(m.date.substring(0,4)) >= 2023);
         }
         else {
-            const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef;
+            // [핵심 수정] loc(홈원정), startDate, endDate 가 선택되어도 요약창이 뜨도록 조건 추가!
+            const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef || loc || startDate || endDate;
+            
             if (hasFilter) {
                 header.style.display = "flex";
                 const tOpp = getUnifiedTeamName(sOpp || currentFilter.opponent), stadium = currentFilter.stadium, league = selLg, bfcMgr = mgr, oppMgr = sOppMgr, ref = sRef;
                 let titleStr = "";
-                // [고도화 버전] 조건별 동적 타이틀 생성
                 let locStr = loc === 'home' ? '홈경기' : (loc === 'away' ? '원정경기' : '경기');
-                let withParticle = tOpp ? getWithParticle(tOpp, true) : ""; // '팀'과의
-                let yearStr = year ? ` (${year}시즌)` : "";
+                let withParticle = tOpp ? getWithParticle(tOpp, true) : ""; 
+                
+                // [신규] 날짜 텍스트 타이틀 처리
+                let dateStr = "";
+                if (startDate && endDate) dateStr = ` (${startDate} ~ ${endDate})`;
+                else if (startDate) dateStr = ` (${startDate} 이후)`;
+                else if (endDate) dateStr = ` (${endDate} 이전)`;
+                else if (year) dateStr = ` (${year}시즌)`;
 
                 if (ref) {
                     titleStr = `${ref} 주심이 진행한 ${locStr} 결과`;
@@ -637,31 +664,20 @@ function sortHistoricalPoint(col) {
                 } 
                   else {
                     let parts = [];
-                    
-                    // 1. 부천 감독 정보
                     if (bfcMgr) parts.push(`${bfcMgr} 감독의`);
-                    
-                    // 2. 대회 정보
                     if (league) parts.push(`${league}에서`);
-                    
-                    // 3. 상대팀 정보
                     if (tOpp) parts.push(`${tOpp}${withParticle}`);
-
-                    // 4. 장소 정보
                     if (stadium) parts.push(`${stadium}에서의`);
 
-                    // 5. 장소 및 최종 결합
                     if (parts.length > 0) {
                         titleStr = `${parts.join(' ')} ${locStr} 결과`;
                     } else {
-                        // 기본 상태
-                        titleStr = loc === 'home' ? "역대 홈경기 결과" : (loc === 'away' ? "역대 원정경기 결과" : "전체 경기 결과");
+                        titleStr = loc === 'home' ? "역대 통산 홈경기 결과" : (loc === 'away' ? "역대 통산 원정경기 결과" : "전체 경기 검색 결과");
                     }
                 }
-
-                // 최종 출력 (시즌 정보 포함)
-                titleEl.innerText = `🔍 ${titleStr}${yearStr}`;
+                titleEl.innerText = `🔍 ${titleStr}${dateStr}`;
             } else header.style.display = "none";
+
             filtered = rawData.filter(m => {
                 const h = (m.hometeam || ""), a = (m.awayteam || ""), isH = h.includes("부천"), oppUnified = getUnifiedTeamName(isH ? a : h);
                 if (currentFilter.opponent && oppUnified !== getUnifiedTeamName(currentFilter.opponent)) return false;
@@ -672,39 +688,35 @@ function sortHistoricalPoint(col) {
                 if (year && !m.date.startsWith(year)) return false; 
                 if (mgr && (m.bfcmanager || m.bfc_manager) !== mgr) return false;
                 if (loc && (loc === 'home' ? !isH : isH)) return false; 
-                if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; return true;
+                if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; 
+                
+                // [신규] 날짜 범위 필터 작동
+                if (startDate && m.date < startDate) return false;
+                if (endDate && m.date > endDate) return false;
+                
+                return true;
             });
         }
 
         if (header.style.display !== "none") {
-    let tw = 0, td = 0, tl = 0, tgf = 0, tga = 0;
-    
-    // 필터링된 경기들을 돌며 승무패 및 득실 계산
-    filtered.forEach(m => {
-        const isH = (m.hometeam || "").includes("부천");
-        const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
-        const myS = isH ? hS : aS, opS = isH ? aS : hS;
-        
-        tgf += myS; 
-        tga += opS;
-        
-        if (myS > opS) tw++; 
-        else if (myS < opS) tl++; 
-        else td++;
-    });
+            let tw = 0, td = 0, tl = 0, tgf = 0, tga = 0;
+            filtered.forEach(m => {
+                const isH = (m.hometeam || "").includes("부천");
+                const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
+                const myS = isH ? hS : aS, opS = isH ? aS : hS;
+                tgf += myS; tga += opS;
+                if (myS > opS) tw++; else if (myS < opS) tl++; else td++;
+            });
+            const totalGames = filtered.length;
+            const winRate = totalGames ? (((tw + td * 0.5) / totalGames) * 100).toFixed(1) : 0;
 
-    const totalGames = filtered.length;
-    // 승률 계산 로직 (K리그 공식 승률 방식: (승 + 무*0.5) / 전체경기)
-    const winRate = totalGames ? (((tw + td * 0.5) / totalGames) * 100).toFixed(1) : 0;
-
-    // 요약 문구 업데이트 (득점/실점 표기 통일 및 승률 추가)
-    if (currentFilter.type === 'away_fan') {
-        summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
-    } else {
-        summary.innerHTML = `조회 결과: <span>${totalGames}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점) - <b>승률 ${winRate}%</b>`;
-    }
-    summary.style.display = 'block';
-}
+            if (currentFilter.type === 'away_fan') {
+                summary.innerHTML = `• 원정관중수 기록은 2023년 이후 K리그 경기에서만 발표되고 있습니다.`;
+            } else {
+                summary.innerHTML = `조회 결과: <span>${totalGames}경기 ${tw}승 ${td}무 ${tl}패</span> (${tgf}득점 ${tga}실점) - <b>승률 ${winRate}%</b>`;
+            }
+            summary.style.display = 'block';
+        }
 
         let dData = [...filtered].sort((a,b) => {
             let vA = a[sortState.column], vB = b[sortState.column];
@@ -717,12 +729,12 @@ function sortHistoricalPoint(col) {
         
         const isAwayMode = currentFilter.type === 'away_fan';
         document.getElementById('table-head').innerHTML = `<tr><th onclick="toggleSort('date')">날짜 ↕</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th onclick="toggleSort('${isAwayMode ? 'awayfan' : 'attendance'}')">${isAwayMode ? '원정팬' : '관중'} ↕</th><th>감독</th></tr>`;
+        
         document.getElementById('table-body').innerHTML = dData.map(m => { 
             const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0, myS = isH ? hS : aS, opS = isH ? aS : hS, res = myS > opS ? "승" : (myS < opS ? "패" : "무"); 
             const displayOpponent = isH ? m.awayteam : m.hometeam;
             const val = isAwayMode ? (parseInt(m.awayfan)||0) : (parseInt(String(m.attendance).replace(/,/g,''))||0);
             
-            // [수정됨] milestone_scorers 가 우선적으로 적용되도록 변경
             const matchTitle = isH ? `부천FC1995 vs ${displayOpponent}` : `${displayOpponent} vs 부천FC1995`;
             const bfcScorers = m.milestone_scorers || m.bfc_scorers || m.bfcscorers || m.Bfc_scorers || "";
 
@@ -731,18 +743,16 @@ function sortHistoricalPoint(col) {
                 <td>${m.league}</td>
                 <td><b class="clickable" onclick="filterByOpponent('${displayOpponent}')">${displayOpponent}</b></td>
                 <td><span class="clickable" onclick="filterByStadium('${m.stadium}')">${m.stadium}</span></td>
-                
                 <td onclick="showMatchDetails('${m.date}', '${matchTitle}', '${hS}:${aS}', '${bfcScorers}')" style="cursor:pointer; background-color:#fff5f5; border-radius:8px;">
                     <span class="clickable" style="font-weight:900; color:var(--bfc-red); font-size:1.1rem;">${hS}:${aS}</span>
                 </td>
-                
                 <td class="${res==='승'?'win':''}">${res}</td>
                 <td class="${isAwayMode?'highlight-red':''}">${val > 0 ? val.toLocaleString() : "-"}</td>
                 <td>${m.bfcmanager || m.bfc_manager || "-"}</td>
             </tr>`; 
         }).join('');
     }
-
+    
     function renderPlayerTable() {
         const year = document.getElementById('p-select-year').value, selectedLeagues = Array.from(document.querySelectorAll('input[name="p-league"]:checked')).map(cb => cb.value);
         const header = document.getElementById('dynamic-header'), titleEl = document.getElementById('dynamic-title'), summary = document.getElementById('dynamic-summary'), panel = document.getElementById('player-ranking-panel');
@@ -957,10 +967,14 @@ function showPlayerTotal(name) {
     
     function toggleSortOnlyDesc(col) { sortState.column = col; sortState.direction = 'desc'; updateView(); }
 
-    function resetToAll() { 
+function resetToAll() { 
         currentFilter = { opponent: null, stadium: null, type: null }; selectedPlayerSearchName = ""; isTotalRankMode = false; sortState = { column: 'date', direction: 'desc' };
-        ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
+        
+        // [수정] start-date 와 end-date 도 초기화 대상에 추가
+        ['search-opponent','search-opp-manager','search-referee','p-search-name','start-date','end-date'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
+        
         ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
+        
         if(document.getElementById('check-all')) document.getElementById('check-all').checked = true;
         document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = true);
         
@@ -1162,11 +1176,9 @@ let historyStack = [];
 let isNavigatingBack = false;
 
 function pushStateToHistory() {
-    // 뒤로가기 복원 중이거나, 테이블에 내용이 아예 없을 때는 백업하지 않음
     if (isNavigatingBack) return;
     if (!document.getElementById('table-body') || document.getElementById('table-body').innerHTML.trim() === "") return;
     
-    // 현재 화면의 모든 조건과 디자인(HTML) 상태를 스냅샷 객체로 저장
     const state = {
         mode: currentMode,
         filter: { ...currentFilter },
@@ -1181,7 +1193,10 @@ function pushStateToHistory() {
             tOppMgr: document.getElementById('search-opp-manager')?.value || "",
             tRef: document.getElementById('search-referee')?.value || "",
             pYear: document.getElementById('p-select-year')?.value || "",
-            pName: document.getElementById('p-search-name')?.value || ""
+            pName: document.getElementById('p-search-name')?.value || "",
+            // [추가] 기간 검색 백업
+            tStartDate: document.getElementById('start-date')?.value || "",
+            tEndDate: document.getElementById('end-date')?.value || ""
         },
         headerTitle: document.getElementById('dynamic-title')?.innerText || "",
         headerSummary: document.getElementById('dynamic-summary')?.innerHTML || "",
@@ -1194,43 +1209,36 @@ function pushStateToHistory() {
             playerPanel: document.getElementById('player-ranking-panel')?.style.display || "",
             headerDisplay: document.getElementById('dynamic-header')?.style.display || ""
         },
-        // [핵심] 테이블 형태를 문자열 통째로 백업
         tableHead: document.getElementById('table-head')?.innerHTML || "",
         tableBody: document.getElementById('table-body')?.innerHTML || ""
     };
 
-    // 직전 상태와 완벽히 동일한 내용이면 중복 저장하지 않음
     if (historyStack.length > 0) {
         const last = historyStack[historyStack.length - 1];
         if (last.tableBody === state.tableBody && last.headerTitle === state.headerTitle) return;
     }
 
-    // 스택에 저장 (메모리 보호를 위해 최대 30단계까지만 저장)
     historyStack.push(state);
     if (historyStack.length > 30) historyStack.shift(); 
 }
 
-// [뒤로가기 버튼 실행 함수]
 function goBackToPrevious() {
     if (historyStack.length <= 1) {
-        // 기록이 1개(최초화면) 이거나 없으면 메인 홈으로 완전 초기화
         historyStack = [];
         resetToAll();
         return;
     }
 
-    historyStack.pop(); // 방금까지 보던 현재 화면 기록은 버림
-    const prevState = historyStack[historyStack.length - 1]; // 직전 화면 데이터 불러오기
+    historyStack.pop(); 
+    const prevState = historyStack[historyStack.length - 1]; 
     
-    isNavigatingBack = true; // 복원 중에는 화면 감지기(Observer) 작동 일시정지
+    isNavigatingBack = true; 
 
-    // 1. 코어 변수 복구
     currentMode = prevState.mode;
     currentFilter = { ...prevState.filter };
     sortState = { ...prevState.sort };
     isTotalRankMode = prevState.isTotalRank;
 
-    // 2. 검색창 및 셀렉트 박스 입력값 복구
     if(document.getElementById('select-year')) document.getElementById('select-year').value = prevState.dom.tYear;
     if(document.getElementById('select-location')) document.getElementById('select-location').value = prevState.dom.tLoc;
     if(document.getElementById('select-manager')) document.getElementById('select-manager').value = prevState.dom.tMgr;
@@ -1240,8 +1248,12 @@ function goBackToPrevious() {
     if(document.getElementById('search-referee')) document.getElementById('search-referee').value = prevState.dom.tRef;
     if(document.getElementById('p-select-year')) document.getElementById('p-select-year').value = prevState.dom.pYear;
     if(document.getElementById('p-search-name')) document.getElementById('p-search-name').value = prevState.dom.pName;
+    
+    // [추가] 기간 검색 복구
+    if(document.getElementById('start-date')) document.getElementById('start-date').value = prevState.dom.tStartDate;
+    if(document.getElementById('end-date')) document.getElementById('end-date').value = prevState.dom.tEndDate;
 
-    // 3. UI 탭 및 필터 박스 노출 상태 복구
+    // ... (이하 기존 코드 동일하게 놔두시면 됩니다) ...
     if(document.getElementById('team-section')) document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
     if(document.getElementById('player-section')) document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
     if(document.getElementById('mode-t')) document.getElementById('mode-t').className = currentMode === 'team' ? 'mode-btn active' : 'mode-btn';
@@ -1253,29 +1265,23 @@ function goBackToPrevious() {
     
     const pFilter = document.querySelector('#player-section .filter-container');
     if(pFilter) pFilter.style.display = prevState.ui.playerFilter;
-    
     const pNotice = document.querySelector('#player-section .data-notice');
     if(pNotice) pNotice.style.display = prevState.ui.playerNotice;
     
     if(document.getElementById('player-ranking-panel')) document.getElementById('player-ranking-panel').style.display = prevState.ui.playerPanel;
     if(document.getElementById('dynamic-header')) document.getElementById('dynamic-header').style.display = prevState.ui.headerDisplay;
 
-    // 4. 헤더 텍스트 복구
     if(document.getElementById('dynamic-title')) document.getElementById('dynamic-title').innerText = prevState.headerTitle;
     if(document.getElementById('dynamic-summary')) document.getElementById('dynamic-summary').innerHTML = prevState.headerSummary;
 
-    // 5. 렌더링된 테이블 화면(HTML) 그대로 덮어씌우기
     if(document.getElementById('table-head')) document.getElementById('table-head').innerHTML = prevState.tableHead;
     if(document.getElementById('table-body')) document.getElementById('table-body').innerHTML = prevState.tableBody;
 
-    // 보조 UI 보정 (원정팬 버튼 활성화 여부)
     const btnAway = document.getElementById('btn-away-fan');
     if(btnAway) btnAway.className = currentFilter.type === 'away_fan' ? 'away-btn active' : 'away-btn';
 
-    // UI 복구가 완전히 끝난 후 감지기 재가동
     setTimeout(() => { isNavigatingBack = false; }, 100);
 }
-
 // 상단 타이틀 로고 클릭(메인 홈으로 가기) 시 히스토리 스택도 같이 비워지도록 이벤트 리스너 추가
 window.addEventListener('DOMContentLoaded', () => {
     const homeLink = document.querySelector('.home-link');
