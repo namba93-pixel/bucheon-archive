@@ -191,20 +191,9 @@
 
 <div class="container">
     <div id="team-section">
-        <!-- [교체됨] 팀 필터 1 (기간 지정 기능 추가) -->
+        <!-- [교체됨] 팀 필터 1 (연/월/일 분리형 상세 조회) -->
         <div id="team-filter-1" class="filter-container">
             <div class="filter-item"><label>시즌별 조회</label><select id="select-year" onchange="updateView()"><option value="">전체 시즌</option></select></div>
-            
-            <!-- [신규] 기간 상세 조회 (달력) -->
-            <div class="filter-item" style="grid-column: span 1;">
-                <label>기간 상세 조회</label>
-                <div style="display: flex; gap: 5px; align-items: center;">
-                    <input type="date" id="start-date" onchange="updateView()" style="padding: 10px; font-size: 0.8rem;">
-                    <span style="font-weight: bold; color: #999;">~</span>
-                    <input type="date" id="end-date" onchange="updateView()" style="padding: 10px; font-size: 0.8rem;">
-                </div>
-            </div>
-
             <div class="filter-item"><label>홈/원정경기</label><select id="select-location" onchange="updateView()"><option value="">전체</option><option value="home">홈 경기</option><option value="away">원정 경기</option></select></div>
             <div class="filter-item"><label>감독별 조회</label><select id="select-manager" onchange="updateView()"><option value="">모든 감독</option></select></div>
             <div class="filter-item">
@@ -218,6 +207,20 @@
                     <option value="코리아컵">코리아컵</option>
                     <option value="챌린저스컵">챌린저스컵</option>
                 </select>
+            </div>
+            
+            <!-- [신규] 별도 줄(Full Width) 연/월/일 상세 검색창 -->
+            <div class="filter-item" style="grid-column: 1 / -1; background: #fafafa; padding: 15px 20px; border-radius: 10px; border: 1px dashed #ccc;">
+                <label style="color:var(--bfc-red); font-size:0.9rem;">📅 특정 기간 및 날짜 상세 조회 <span style="font-size:0.75rem; color:#888; font-weight:normal;">(연도를 비우고 월/일만 선택하면 '역대 해당 날짜' 범위로 검색됩니다)</span></label>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
+                    <select id="s-year" onchange="updateView()" style="width:90px; padding:8px; border-radius:6px;"><option value="">연도</option></select>
+                    <select id="s-month" onchange="updateView()" style="width:70px; padding:8px; border-radius:6px;"><option value="">월</option></select>
+                    <select id="s-day" onchange="updateView()" style="width:70px; padding:8px; border-radius:6px;"><option value="">일</option></select>
+                    <span style="font-weight: bold; color: #999; margin: 0 5px;">~</span>
+                    <select id="e-year" onchange="updateView()" style="width:90px; padding:8px; border-radius:6px;"><option value="">연도</option></select>
+                    <select id="e-month" onchange="updateView()" style="width:70px; padding:8px; border-radius:6px;"><option value="">월</option></select>
+                    <select id="e-day" onchange="updateView()" style="width:70px; padding:8px; border-radius:6px;"><option value="">일</option></select>
+                </div>
             </div>
         </div>
         <div id="team-filter-2" class="filter-container" style="margin-top: 15px; grid-template-columns: repeat(4, 1fr);">
@@ -603,9 +606,12 @@ function sortHistoricalPoint(col) {
         const year = document.getElementById('select-year')?.value, 
               loc = document.getElementById('select-location')?.value, 
               mgr = document.getElementById('select-manager')?.value, 
-              selLg = document.getElementById('select-league')?.value,
-              startDate = document.getElementById('start-date')?.value || "", // [추가] 시작일
-              endDate = document.getElementById('end-date')?.value || "";     // [추가] 종료일
+              selLg = document.getElementById('select-league')?.value;
+
+        // [신규] 6개의 연/월/일 변수
+        const sy = document.getElementById('s-year')?.value || "", sm = document.getElementById('s-month')?.value || "", sd = document.getElementById('s-day')?.value || "";
+        const ey = document.getElementById('e-year')?.value || "", em = document.getElementById('e-month')?.value || "", ed = document.getElementById('e-day')?.value || "";
+        const hasDateFilter = sy || sm || sd || ey || em || ed;
 
         const sOpp = (document.getElementById('search-opponent')?.value || "").trim(), 
               sOppMgr = (document.getElementById('search-opp-manager')?.value || "").trim(), 
@@ -636,8 +642,7 @@ function sortHistoricalPoint(col) {
             filtered = rawData.filter(m => !(m.hometeam || "").includes("부천") && parseInt(m.date.substring(0,4)) >= 2023);
         }
         else {
-            // [핵심 수정] loc(홈원정), startDate, endDate 가 선택되어도 요약창이 뜨도록 조건 추가!
-            const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef || loc || startDate || endDate;
+            const hasFilter = currentFilter.opponent || currentFilter.stadium || year || mgr || selLg || sOpp || sOppMgr || sRef || loc || hasDateFilter;
             
             if (hasFilter) {
                 header.style.display = "flex";
@@ -646,12 +651,17 @@ function sortHistoricalPoint(col) {
                 let locStr = loc === 'home' ? '홈경기' : (loc === 'away' ? '원정경기' : '경기');
                 let withParticle = tOpp ? getWithParticle(tOpp, true) : ""; 
                 
-                // [신규] 날짜 텍스트 타이틀 처리
+                // [신규] 날짜 텍스트 타이틀 처리 (역대 검색인지 특정 연도인지 판별)
                 let dateStr = "";
-                if (startDate && endDate) dateStr = ` (${startDate} ~ ${endDate})`;
-                else if (startDate) dateStr = ` (${startDate} 이후)`;
-                else if (endDate) dateStr = ` (${endDate} 이전)`;
-                else if (year) dateStr = ` (${year}시즌)`;
+                if (hasDateFilter) {
+                    let startText = [sy?sy+"년":"", sm?sm+"월":"", sd?sd+"일":""].join(" ").trim();
+                    let endText = [ey?ey+"년":"", em?em+"월":"", ed?ed+"일":""].join(" ").trim();
+                    if (!sy && !ey) { startText = "역대 " + startText; } // 연도가 없으면 '역대' 강조
+                    
+                    if (startText && endText) dateStr = ` (${startText} ~ ${endText})`;
+                    else if (startText) dateStr = ` (${startText} 이후)`;
+                    else if (endText) dateStr = ` (${endText} 이전)`;
+                } else if (year) dateStr = ` (${year}시즌)`;
 
                 if (ref) {
                     titleStr = `${ref} 주심이 진행한 ${locStr} 결과`;
@@ -661,19 +671,15 @@ function sortHistoricalPoint(col) {
                     titleStr = `${tOpp}의 ${oppMgr} 감독을 상대로 한 ${locStr} 결과`;
                 } else if (oppMgr) {
                     titleStr = `${oppMgr} 감독과의 ${locStr} 결과`;
-                } 
-                  else {
+                } else {
                     let parts = [];
                     if (bfcMgr) parts.push(`${bfcMgr} 감독의`);
                     if (league) parts.push(`${league}에서`);
                     if (tOpp) parts.push(`${tOpp}${withParticle}`);
                     if (stadium) parts.push(`${stadium}에서의`);
 
-                    if (parts.length > 0) {
-                        titleStr = `${parts.join(' ')} ${locStr} 결과`;
-                    } else {
-                        titleStr = loc === 'home' ? "역대 통산 홈경기 결과" : (loc === 'away' ? "역대 통산 원정경기 결과" : "전체 경기 검색 결과");
-                    }
+                    if (parts.length > 0) titleStr = `${parts.join(' ')} ${locStr} 결과`;
+                    else titleStr = loc === 'home' ? "역대 통산 홈경기 결과" : (loc === 'away' ? "역대 통산 원정경기 결과" : "전체 경기 검색 결과");
                 }
                 titleEl.innerText = `🔍 ${titleStr}${dateStr}`;
             } else header.style.display = "none";
@@ -690,10 +696,21 @@ function sortHistoricalPoint(col) {
                 if (loc && (loc === 'home' ? !isH : isH)) return false; 
                 if (selLg && getUnifiedLeagueName(m.league) !== selLg) return false; 
                 
-                // [신규] 날짜 범위 필터 작동
-                if (startDate && m.date < startDate) return false;
-                if (endDate && m.date > endDate) return false;
-                
+                // [신규] 날짜 범위 엔진
+                if (hasDateFilter && m.date) {
+                    if (sy || ey) {
+                        // 1. 연도가 하나라도 있으면 [절대 날짜] 추적
+                        const mStart = (sy||'0000') + '-' + (sm||'01') + '-' + (sd||'01');
+                        const mEnd = (ey||'9999') + '-' + (em||'12') + '-' + (ed||'31');
+                        if (m.date < mStart || m.date > mEnd) return false;
+                    } else {
+                        // 2. 연도가 없으면 매년 반복되는 [역대 해당 월/일] 추적
+                        const mdStart = (sm||'01') + '-' + (sd||'01');
+                        const mdEnd = (em||'12') + '-' + (ed||'31');
+                        const matchMD = m.date.substring(5, 10);
+                        if (matchMD < mdStart || matchMD > mdEnd) return false;
+                    }
+                }
                 return true;
             });
         }
@@ -947,10 +964,27 @@ function showPlayerTotal(name) {
     document.getElementById('modal-overlay').style.display = 'flex'; 
 }
 
+    // [교체] 필터 초기화 함수 (상세 검색 연/월/일 자동 생성 포함)
     function initFilters() {
-        const tY = [...new Set(rawData.map(m => (m.date || "").substring(0,4)))].sort(); const yS = document.getElementById('select-year'); if(yS) { yS.innerHTML = '<option value="">전체 시즌</option>'; tY.forEach(y => yS.add(new Option(y + " 시즌", y))); }
-        const mgrs = [...new Set(rawData.map(m => m.bfcmanager || m.bfc_manager))].filter(Boolean).sort(); const mS = document.getElementById('select-manager'); if(mS) { mS.innerHTML = '<option value="">모든 감독</option>'; mgrs.forEach(m => mS.add(new Option(m, m))); }
-        const pyS = document.getElementById('p-select-year'); if(pyS){ pyS.innerHTML = '<option value="">전체 시즌</option>'; [...new Set(playerSeasonData.map(p => p.season))].sort().forEach(y => pyS.add(new Option(y + " 시즌", y))); }
+        const tY = [...new Set(rawData.map(m => (m.date || "").substring(0,4)))].filter(Boolean).sort(); 
+        const yS = document.getElementById('select-year'); 
+        if(yS) { yS.innerHTML = '<option value="">전체 시즌</option>'; tY.forEach(y => yS.add(new Option(y + " 시즌", y))); }
+        
+        const mgrs = [...new Set(rawData.map(m => m.bfcmanager || m.bfc_manager))].filter(Boolean).sort(); 
+        const mS = document.getElementById('select-manager'); 
+        if(mS) { mS.innerHTML = '<option value="">모든 감독</option>'; mgrs.forEach(m => mS.add(new Option(m, m))); }
+        
+        const pyS = document.getElementById('p-select-year'); 
+        if(pyS){ pyS.innerHTML = '<option value="">전체 시즌</option>'; [...new Set(playerSeasonData.map(p => p.season))].sort().forEach(y => pyS.add(new Option(y + " 시즌", y))); }
+
+        // [신규] 상세 검색용 연/월/일 채우기
+        const sY = document.getElementById('s-year'), eY = document.getElementById('e-year');
+        const sM = document.getElementById('s-month'), eM = document.getElementById('e-month');
+        const sD = document.getElementById('s-day'), eD = document.getElementById('e-day');
+        
+        if(sY && eY) { tY.forEach(y => { sY.add(new Option(y+"년", y)); eY.add(new Option(y+"년", y)); }); }
+        if(sM && eM) { for(let i=1; i<=12; i++) { const v = String(i).padStart(2, '0'); sM.add(new Option(i+"월", v)); eM.add(new Option(i+"월", v)); } }
+        if(sD && eD) { for(let i=1; i<=31; i++) { const v = String(i).padStart(2, '0'); sD.add(new Option(i+"일", v)); eD.add(new Option(i+"일", v)); } }
     }
 
     function showSuggestions(input, type) {
@@ -970,12 +1004,13 @@ function showPlayerTotal(name) {
 function resetToAll() { 
         currentFilter = { opponent: null, stadium: null, type: null }; selectedPlayerSearchName = ""; isTotalRankMode = false; sortState = { column: 'date', direction: 'desc' };
         
-        // [수정] start-date 와 end-date 도 초기화 대상에 추가
-        ['search-opponent','search-opp-manager','search-referee','p-search-name','start-date','end-date'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
+        ['search-opponent','search-opp-manager','search-referee','p-search-name'].forEach(id => {if(document.getElementById(id)) document.getElementById(id).value = "";}); 
         
-        ['select-year','select-location','select-manager','select-league','p-select-year'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
+        // [수정] 6개 날짜 셀렉트 박스도 초기화 대상에 추가
+        ['select-year','select-location','select-manager','select-league','p-select-year', 's-year', 's-month', 's-day', 'e-year', 'e-month', 'e-day'].forEach(id => {const el=document.getElementById(id); if(el) el.value="";}); 
         
         if(document.getElementById('check-all')) document.getElementById('check-all').checked = true;
+// ... 이하 기존 내용 동일 ...
         document.querySelectorAll('input[name="p-league"]').forEach(cb => cb.checked = true);
         
         // 필터 및 안내 복구
@@ -1194,9 +1229,13 @@ function pushStateToHistory() {
             tRef: document.getElementById('search-referee')?.value || "",
             pYear: document.getElementById('p-select-year')?.value || "",
             pName: document.getElementById('p-search-name')?.value || "",
-            // [추가] 기간 검색 백업
-            tStartDate: document.getElementById('start-date')?.value || "",
-            tEndDate: document.getElementById('end-date')?.value || ""
+            // [추가] 6개 날짜 상태 백업
+            sy: document.getElementById('s-year')?.value || "",
+            sm: document.getElementById('s-month')?.value || "",
+            sd: document.getElementById('s-day')?.value || "",
+            ey: document.getElementById('e-year')?.value || "",
+            em: document.getElementById('e-month')?.value || "",
+            ed: document.getElementById('e-day')?.value || ""
         },
         headerTitle: document.getElementById('dynamic-title')?.innerText || "",
         headerSummary: document.getElementById('dynamic-summary')?.innerHTML || "",
@@ -1249,11 +1288,14 @@ function goBackToPrevious() {
     if(document.getElementById('p-select-year')) document.getElementById('p-select-year').value = prevState.dom.pYear;
     if(document.getElementById('p-search-name')) document.getElementById('p-search-name').value = prevState.dom.pName;
     
-    // [추가] 기간 검색 복구
-    if(document.getElementById('start-date')) document.getElementById('start-date').value = prevState.dom.tStartDate;
-    if(document.getElementById('end-date')) document.getElementById('end-date').value = prevState.dom.tEndDate;
+    // [추가] 6개 날짜 상태 복구
+    if(document.getElementById('s-year')) document.getElementById('s-year').value = prevState.dom.sy;
+    if(document.getElementById('s-month')) document.getElementById('s-month').value = prevState.dom.sm;
+    if(document.getElementById('s-day')) document.getElementById('s-day').value = prevState.dom.sd;
+    if(document.getElementById('e-year')) document.getElementById('e-year').value = prevState.dom.ey;
+    if(document.getElementById('e-month')) document.getElementById('e-month').value = prevState.dom.em;
+    if(document.getElementById('e-day')) document.getElementById('e-day').value = prevState.dom.ed;
 
-    // ... (이하 기존 코드 동일하게 놔두시면 됩니다) ...
     if(document.getElementById('team-section')) document.getElementById('team-section').style.display = currentMode === 'team' ? 'block' : 'none';
     if(document.getElementById('player-section')) document.getElementById('player-section').style.display = currentMode === 'player' ? 'block' : 'none';
     if(document.getElementById('mode-t')) document.getElementById('mode-t').className = currentMode === 'team' ? 'mode-btn active' : 'mode-btn';
@@ -1280,6 +1322,8 @@ function goBackToPrevious() {
     const btnAway = document.getElementById('btn-away-fan');
     if(btnAway) btnAway.className = currentFilter.type === 'away_fan' ? 'away-btn active' : 'away-btn';
 
+    setTimeout(() => { isNavigatingBack = false; }, 100);
+}
     setTimeout(() => { isNavigatingBack = false; }, 100);
 }
 // 상단 타이틀 로고 클릭(메인 홈으로 가기) 시 히스토리 스택도 같이 비워지도록 이벤트 리스너 추가
