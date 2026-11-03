@@ -116,18 +116,36 @@
         <span id="stat-gf">0득점</span> <span id="stat-ga">0실점</span> | <span>승률</span><span id="stat-rate">0%</span>
     </div>
 
-    <div id="streak-banner-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; padding: 0 15px;">
-        <div class="streak-card" onclick="showStreakView('win')" style="width: 100%; max-width: 600px; justify-content: center;">
-            <span class="streak-label">역대 최다연승 보러가기 (<b id="max-win-count">0경기</b>)</span>
-            <span class="streak-divider">|</span>
-            <span class="streak-current">현재 <b id="active-win-count" style="color:#ff4d4d">0연승</b> 진행중! 🔥</span>
-        </div>
-        <div class="streak-card" onclick="showStreakView('undef')" style="width: 100%; max-width: 600px; justify-content: center;">
-            <span class="streak-label">역대 최다 무패 보러가기 (<b id="max-undef-count">0경기</b>)</span>
-            <span class="streak-divider">|</span>
-            <span class="streak-current">현재 <b id="active-undef-count" style="color:#ffad33">0경기</b> 무패 진행중! 🔥</span>
-        </div>
+    <div id="streak-banner-container"
+     style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:20px; padding:0 15px;">
+
+    <div class="streak-card"
+         onclick="showStreakView('win')"
+         style="width:100%; max-width:600px; justify-content:center; flex-wrap:wrap;">
+
+        <span class="streak-label">
+            🏆 역대 최다 연승 / 연패
+            (<b id="max-win-count">0경기</b> /
+             <b id="max-loss-count">0경기</b>)
+        </span>
+
+        <span class="streak-current" id="active-win-info"></span>
     </div>
+
+    <div class="streak-card"
+         onclick="showStreakView('undef')"
+         style="width:100%; max-width:600px; justify-content:center; flex-wrap:wrap;">
+
+        <span class="streak-label">
+            🔥 역대 최다 연속 무패 / 무승
+            (<b id="max-undef-count">0경기</b> /
+             <b id="max-winless-count">0경기</b>)
+        </span>
+
+        <span class="streak-current" id="active-undef-info"></span>
+    </div>
+
+</div>
 </header>
 
 <div class="mode-switch">
@@ -271,97 +289,355 @@
         calculateStreaks()
     }
 
-    let allWinStreaks = [], allUndefeatedStreaks = [];
+    let allWinStreaks = [];
+let allLossStreaks = [];
+let allUndefeatedStreaks = [];
+let allWinlessStreaks = [];
 
-    function calculateStreaks() {
-        if (!rawData || rawData.length === 0) return;
-        const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
-        let winGroups = [], undefGroups = [];
-        let tempWin = [], tempUndef = [];
+function calculateStreaks() {
 
-        sortedData.forEach((m) => {
-            const isH = (m.hometeam || "").includes("부천");
-            const hS = parseInt(m.homescored) || 0, aS = parseInt(m.awayscored) || 0;
-            const myS = isH ? hS : aS, opS = isH ? aS : hS;
-            
-            if (myS > opS) tempWin.push(m);
-            else { if (tempWin.length > 0) winGroups.push({ count: tempWin.length, games: [...tempWin] }); tempWin = []; }
-            
-            if (myS >= opS) tempUndef.push(m);
-            else { if (tempUndef.length > 0) undefGroups.push({ count: tempUndef.length, games: [...tempUndef] }); tempUndef = []; }
-        });
-        
-        let activeWin = tempWin.length, activeUndef = tempUndef.length;
-        if (activeWin > 0) winGroups.push({ count: activeWin, games: [...tempWin], active: true });
-        if (activeUndef > 0) undefGroups.push({ count: activeUndef, games: [...tempUndef], active: true });
+    if (!rawData || rawData.length === 0) return;
 
-        const maxWin = winGroups.length > 0 ? Math.max(...winGroups.map(x => x.count)) : 0;
-        const uniqueUndef = [...new Set(undefGroups.map(g => g.count))].sort((a, b) => b - a);
-        const top3Counts = uniqueUndef.length > 0 ? uniqueUndef.slice(0, 3) : [0];
+    const sortedData = [...rawData].sort(
+        (a, b) => new Date(a.date) - new Date(b.date)
+    );
 
-        allWinStreaks = winGroups.filter(g => g.count === maxWin);
-        allUndefeatedStreaks = undefGroups.filter(g => top3Counts.includes(g.count)).sort((a, b) => b.count - a.count);
+    const groups = {
+        win: [],
+        loss: [],
+        undef: [],
+        winless: []
+    };
 
-        const winCard = document.querySelector('.streak-card[onclick*="win"]');
-        const undefCard = document.querySelector('.streak-card[onclick*="undef"]');
+    const temp = {
+        win: [],
+        loss: [],
+        undef: [],
+        winless: []
+    };
 
-        if (winCard) {
-            let html = `<span class="streak-label">역대 최다연승 보러가기 (<b>${maxWin}경기</b>)</span>`;
-            if (activeWin >= 2) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ff4d4d">${activeWin}연승</b> 진행중! 🔥</span>`;
-            winCard.innerHTML = html;
-        }
-        if (undefCard) {
-            let html = `<span class="streak-label">역대 최다 무패 보러가기 (<b>${top3Counts[0]}경기</b>)</span>`;
-            if (activeUndef >= 3) html += `<span class="streak-divider">|</span> <span class="streak-current">현재 <b style="color:#ffad33">${activeUndef}경기</b> 무패 진행중! 🔥</span>`;
-            undefCard.innerHTML = html;
+    function saveGroup(type) {
+        if (temp[type].length > 0) {
+            groups[type].push({
+                count: temp[type].length,
+                games: [...temp[type]]
+            });
+            temp[type] = [];
         }
     }
 
+    sortedData.forEach(m => {
+
+        const isHome = (m.hometeam || "").includes("부천");
+
+        const homeScore = parseInt(m.homescored) || 0;
+        const awayScore = parseInt(m.awayscored) || 0;
+
+        const myScore = isHome ? homeScore : awayScore;
+        const opponentScore = isHome ? awayScore : homeScore;
+
+        const win = myScore > opponentScore;
+        const loss = myScore < opponentScore;
+        const draw = myScore === opponentScore;
+
+        const conditions = {
+            win: win,
+            loss: loss,
+            undef: win || draw,
+            winless: loss || draw
+        };
+
+        Object.keys(conditions).forEach(type => {
+
+            if (conditions[type]) {
+                temp[type].push(m);
+            } else {
+                saveGroup(type);
+            }
+
+        });
+
+    });
+
+    const active = {};
+
+    Object.keys(temp).forEach(type => {
+
+        active[type] = temp[type].length;
+
+        if (temp[type].length > 0) {
+            groups[type].push({
+                count: temp[type].length,
+                games: [...temp[type]],
+                active: true
+            });
+        }
+
+    });
+
+    function getTop3(data) {
+
+        const counts = [...new Set(
+            data.map(g => g.count)
+        )].sort((a, b) => b - a);
+
+        const topCounts = counts.slice(0, 3);
+
+        return data
+            .filter(g => topCounts.includes(g.count))
+            .sort((a, b) =>
+                b.count - a.count ||
+                new Date(a.games[0].date) -
+                new Date(b.games[0].date)
+            );
+    }
+
+    allWinStreaks = getTop3(groups.win);
+    allLossStreaks = getTop3(groups.loss);
+    allUndefeatedStreaks = getTop3(groups.undef);
+    allWinlessStreaks = getTop3(groups.winless);
+
+    function maxCount(type) {
+        return groups[type].length
+            ? Math.max(...groups[type].map(g => g.count))
+            : 0;
+    }
+
+    document.getElementById("max-win-count").innerText =
+        maxCount("win") + "경기";
+
+    document.getElementById("max-loss-count").innerText =
+        maxCount("loss") + "경기";
+
+    document.getElementById("max-undef-count").innerText =
+        maxCount("undef") + "경기";
+
+    document.getElementById("max-winless-count").innerText =
+        maxCount("winless") + "경기";
+
+    const winInfo = document.getElementById("active-win-info");
+    const undefInfo = document.getElementById("active-undef-info");
+
+    winInfo.innerHTML = active.win >= 2
+        ? `현재 <b style="color:#ff4d4d">${active.win}연승</b> 진행중! 🔥`
+        : active.loss >= 2
+            ? `현재 <b style="color:#ff4d4d">${active.loss}연패</b> 진행중!`
+            : "";
+
+    undefInfo.innerHTML = active.undef >= 3
+        ? `현재 <b style="color:#ffad33">${active.undef}경기</b> 무패 진행중! 🔥`
+        : active.winless >= 3
+            ? `현재 <b style="color:#ffad33">${active.winless}경기</b> 무승 진행중!`
+            : "";
+}
+    
     function showStreakView(type) {
-        resetToAll();
-        currentFilter.type = 'streak_view';
-        
-        const hides = ['team-filter-1', 'team-filter-2', 'team-notice', 'player-section', 'player-ranking-panel'];
-        hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
 
-        const header = document.getElementById('dynamic-header');
-        header.style.display = "flex";
-        document.getElementById('dynamic-title').innerText = type === 'win' ? `🏆 부천FC1995 통산 최다 연승 기록` : `🔥 부천FC1995 통산 최다 무패 기록 (상위 3위)`;
-        
-        const targetGroups = type === 'win' ? allWinStreaks : allUndefeatedStreaks;
-        const summary = document.getElementById('dynamic-summary');
-        summary.innerHTML = type === 'win' ? 
-            `부천FC 역사상 최다 연승 기록인 <span>${targetGroups[0].count}경기</span> 구간이 총 <span>${targetGroups.length}번</span> 있었습니다.` :
-            `부천FC 역사상 무패 기록 <span>상위 3위</span>까지의 모든 구간을 조회합니다.`;
-        summary.style.display = 'block';
+    resetToAll();
 
-        document.getElementById('table-head').innerHTML = `<tr><th>날짜</th><th>대회</th><th>상대</th><th>장소</th><th>스코어</th><th>결과</th><th>관중</th><th>감독</th></tr>`;
-        
-        let html = "";
-        let currentRank = 0;
-        let lastCount = -1;
+    currentFilter.type = 'streak_view';
 
-        targetGroups.forEach((group, index) => {
-            if (group.count !== lastCount) { currentRank++; lastCount = group.count; }
-            const sortedGames = [...group.games].sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            const rowColor = (type === 'undef' && currentRank === 1) || (type === 'win') ? '#ed1c24' : '#555';
-            html += `<tr style="background:#f8f9fa; border-top:2px solid ${rowColor};">
-                        <td colspan="8" style="padding:15px; font-weight:800; color:${rowColor}; text-align:left;">
-                            ${type === 'undef' ? `[${currentRank}위 기록 - ${group.count}경기] ` : ''} 
-                            📍 ${index + 1}번째 기록 구간 (${sortedGames[0].date} ~ ${sortedGames[sortedGames.length-1].date})
-                        </td>
-                     </tr>`;
+    const hides = [
+        'team-filter-1',
+        'team-filter-2',
+        'team-notice',
+        'player-section',
+        'player-ranking-panel'
+    ];
 
-            html += sortedGames.map(m => {
-                const isH = (m.hometeam || "").includes("부천"), hS = parseInt(m.homescored)||0, aS = parseInt(m.awayscored)||0;
-                const res = (isH?hS:aS) > (isH?aS:hS) ? "승" : ((isH?hS:aS) < (isH?aS:hS) ? "패" : "무");
-                return `<tr><td>${m.date}</td><td>${m.league}</td><td>${isH?m.awayteam:m.hometeam}</td><td>${m.stadium||"-"}</td><td>${hS}:${aS}</td><td class="${res==='승'?'win':''}">${res}</td><td>${m.attendance||"-"}</td><td>${m.bfcmanager || m.bfc_manager || "-"}</td></tr>`;
-            }).join('');
-        });
-        document.getElementById('table-body').innerHTML = html;
+    hides.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    const header = document.getElementById('dynamic-header');
+    header.style.display = "flex";
+
+    const isWinPage = type === 'win' || type === 'loss';
+
+    const title = isWinPage
+        ? '🏆 부천FC1995 통산 연승 / 연패 기록'
+        : '🔥 부천FC1995 통산 연속 무패 / 무승 기록';
+
+    document.getElementById('dynamic-title').innerText = title;
+
+    const summary = document.getElementById('dynamic-summary');
+    summary.style.display = 'block';
+
+    const tabs = isWinPage
+        ? [
+            { type: 'win', label: '연승 기록' },
+            { type: 'loss', label: '연패 기록' }
+          ]
+        : [
+            { type: 'undef', label: '연속 무패' },
+            { type: 'winless', label: '연속 무승' }
+          ];
+
+    summary.innerHTML = `
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            ${tabs.map(tab => `
+                <button
+                    onclick="renderStreakRecords('${tab.type}')"
+                    id="streak-tab-${tab.type}"
+                    class="mode-btn"
+                    style="flex:1; min-width:120px;">
+                    ${tab.label}
+                </button>
+            `).join('')}
+        </div>
+
+        <div id="streak-record-summary"
+             style="margin-top:15px;">
+        </div>
+    `;
+
+    renderStreakRecords(type);
+}
+
+
+function renderStreakRecords(type) {
+
+    const records = {
+        win: allWinStreaks,
+        loss: allLossStreaks,
+        undef: allUndefeatedStreaks,
+        winless: allWinlessStreaks
+    };
+
+    const labels = {
+        win: '연승',
+        loss: '연패',
+        undef: '연속 무패',
+        winless: '연속 무승'
+    };
+
+    const targetGroups = records[type] || [];
+
+    document.querySelectorAll('[id^="streak-tab-"]').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    const activeTab = document.getElementById('streak-tab-' + type);
+
+    if (activeTab) {
+        activeTab.classList.add('active');
     }
 
+    const summary = document.getElementById('streak-record-summary');
+
+    if (targetGroups.length === 0) {
+
+        summary.innerHTML = '해당 기록이 없습니다.';
+
+        document.getElementById('table-head').innerHTML = '';
+        document.getElementById('table-body').innerHTML = '';
+
+        return;
+    }
+
+    const maxCount = targetGroups[0].count;
+
+    summary.innerHTML = `
+        부천FC1995 역대 최다 ${labels[type]} 기록은
+        <span>${maxCount}경기</span>입니다.
+        <br>
+        상위 3위까지의 기록과 공동 순위에 해당하는
+        모든 구간을 표시합니다.
+    `;
+
+    document.getElementById('table-head').innerHTML = `
+        <tr>
+            <th>날짜</th>
+            <th>대회</th>
+            <th>상대</th>
+            <th>장소</th>
+            <th>스코어</th>
+            <th>결과</th>
+            <th>관중</th>
+            <th>감독</th>
+        </tr>
+    `;
+
+    let html = "";
+
+    let currentRank = 0;
+    let lastCount = -1;
+
+    targetGroups.forEach((group, index) => {
+
+        if (group.count !== lastCount) {
+            currentRank++;
+            lastCount = group.count;
+        }
+
+        const games = [...group.games].sort(
+            (a, b) => new Date(a.date) - new Date(b.date)
+        );
+
+        const firstDate = games[0].date;
+        const lastDate = games[games.length - 1].date;
+
+        const color = currentRank === 1
+            ? '#ed1c24'
+            : '#555';
+
+        html += `
+            <tr style="background:#f8f9fa; border-top:2px solid ${color};">
+                <td colspan="8"
+                    style="padding:15px; font-weight:800; color:${color}; text-align:left;">
+
+                    [${currentRank}위 - ${group.count}경기 ${labels[type]}]
+
+                    📍 ${firstDate} ~ ${lastDate}
+
+                    ${group.active ? '🔥 현재 진행 중' : ''}
+
+                </td>
+            </tr>
+        `;
+
+        games.forEach(m => {
+
+            const isHome = (m.hometeam || "").includes("부천");
+
+            const homeScore = parseInt(m.homescored) || 0;
+            const awayScore = parseInt(m.awayscored) || 0;
+
+            const myScore = isHome ? homeScore : awayScore;
+            const opponentScore = isHome ? awayScore : homeScore;
+
+            const result = myScore > opponentScore
+                ? '승'
+                : myScore < opponentScore
+                    ? '패'
+                    : '무';
+
+            const opponent = isHome
+                ? m.awayteam
+                : m.hometeam;
+
+            html += `
+                <tr>
+                    <td>${m.date}</td>
+                    <td>${m.league}</td>
+                    <td>${opponent}</td>
+                    <td>${m.stadium || '-'}</td>
+                    <td>${homeScore}:${awayScore}</td>
+                    <td class="${result === '승' ? 'win' : ''}">
+                        ${result}
+                    </td>
+                    <td>${m.attendance || '-'}</td>
+                    <td>${m.bfcmanager || m.bfc_manager || '-'}</td>
+                </tr>
+            `;
+
+        });
+
+    });
+
+    document.getElementById('table-body').innerHTML = html;
+}
     function parseCSV(text) {
         const rows = text.split(/\r?\n/).filter(l => l.trim() !== "");
         if (rows.length < 1) return [];
